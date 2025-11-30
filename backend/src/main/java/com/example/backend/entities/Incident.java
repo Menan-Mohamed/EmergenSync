@@ -9,8 +9,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "incidents")
 @Data
+@Table(name = "incidents")
 public class Incident {
 
     @Id

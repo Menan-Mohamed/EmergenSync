@@ -16,7 +16,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
@@ -58,12 +57,16 @@ public class AssignmentService {
 
     }
 
-    public void checkIfVehicleReachedIncident(Integer vehicleId, BigDecimal lat, BigDecimal lon){
+    public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
 
         Assignment assignment = assignmentRepository.findActiveAssignmentByVehicle(vehicleId);
         if (assignment == null) return;
 
         Incident incident = assignment.getIncident();
+
+        if (!hasReached(lat, lon, incident.getLatitude(), incident.getLongitude())) {
+            return;
+        }
 
         assignment.setSolvedAt(LocalDateTime.now());
         assignmentRepository.save(assignment);
@@ -78,8 +81,8 @@ public class AssignmentService {
 
     }
 
-    private boolean hasReached(BigDecimal vehicleLatitude, BigDecimal vehicleLongitude,
-                               BigDecimal incidentLatitude, BigDecimal incidentLongitude) {
+    private boolean hasReached(Double vehicleLatitude, Double vehicleLongitude,
+        Double incidentLatitude, Double incidentLongitude) {
 
         double distance = haversineFormula.haversine(
                 vehicleLatitude.doubleValue(), vehicleLongitude.doubleValue(),
