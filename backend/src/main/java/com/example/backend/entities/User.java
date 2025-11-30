@@ -1,5 +1,7 @@
-package com.example.backend.entity;
+package com.example.backend.entities;
 
+import com.example.backend.enums.UserRole;
+import com.example.backend.enums.UserType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -32,11 +34,4 @@ public class User {
     @Column(name = "approved", nullable = false)
     private boolean approved;
 
-    public enum UserType {
-        medical, fire, police
-    }
-
-    public enum UserRole {
-        Dispatcher, EmergencyResponders, SYSTEM_ADMIN
-    }
 }

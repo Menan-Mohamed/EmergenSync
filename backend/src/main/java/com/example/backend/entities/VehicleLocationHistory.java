@@ -1,9 +1,7 @@
-package com.example.backend.entity;
+package com.example.backend.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vehicle_location_history")

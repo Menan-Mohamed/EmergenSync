@@ -1,5 +1,7 @@
-package com.example.backend.entity;
+package com.example.backend.entities;
 
+import com.example.backend.enums.VehicleStatus;
+import com.example.backend.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -30,11 +32,5 @@ public class Vehicle {
     private LocalDateTime lastUpdate;
 
 
-    public enum VehicleType {
-        medical, fire, police
-    }
 
-    public enum VehicleStatus {
-        available, on_route, busy, maintenance
-    }
 }
