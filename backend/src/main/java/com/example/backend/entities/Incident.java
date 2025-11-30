@@ -1,7 +1,7 @@
 package com.example.backend.entities;
 
 
-import com.example.backend.enums.IncidentState;
+import com.example.backend.enums.IncidentStatus;
 import com.example.backend.enums.IncidentType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,8 +22,8 @@ public class Incident {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name= "state", nullable = false)
-    private IncidentState state;
+    @Column(name= "status", nullable = false)
+    private IncidentStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name="type", nullable = false)
