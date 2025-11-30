@@ -16,19 +16,17 @@ public class IncidentService {
     @Autowired
     private IncidentRepository incidentRepository;
 
-//    @Autowired
-//    private DispatchService dispatchService;
-//
-//    public Incident createIncident(Incident incident){
-//
-//        incident.setStatus(REPORTED);
-//        incident.setReportedAt(LocalDateTime.now());
-//        Incident savedIncident = incidentRepository.save(incident);
-//
-//        dispatchService.tryAutoAssign(savedIncident);
-//
-//        return savedIncident;
-//    }
+   @Autowired
+   private DispatchService dispatchService;
 
-    // add other methods on contract
+   public Incident createIncident(Incident incident){
+
+       incident.setStatus(REPORTED);
+       incident.setReportedAt(LocalDateTime.now());
+       Incident savedIncident = incidentRepository.save(incident);
+
+       dispatchService.autoAssign(savedIncident);
+
+       return savedIncident;
+   }
 }
