@@ -1,5 +1,8 @@
-package com.example.backend.entity;
+package com.example.backend.entities;
 
+
+import com.example.backend.enums.IncidentState;
+import com.example.backend.enums.IncidentType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,14 +40,5 @@ public class Incident {
 
     @Column(name="reportedAt", nullable = false)
     private LocalDateTime reportedAt;
-
-
-    public enum IncidentState {
-        reported, assigned, resolved
-    }
-
-    public enum IncidentType {
-        medical, fire, police
-    }
 
 }

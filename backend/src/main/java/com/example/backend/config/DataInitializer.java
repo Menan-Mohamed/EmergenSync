@@ -1,7 +1,7 @@
 package com.example.backend.config;
 
-import com.example.backend.entity.User;
-import com.example.backend.repository.UserRepository;
+import com.example.backend.entities.User;
+import com.example.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
