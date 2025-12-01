@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/ems/vehicle")
+@RequestMapping("/api/responder/vehicle")
 public class VehicleController {
 
     @Autowired
