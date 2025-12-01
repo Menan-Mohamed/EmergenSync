@@ -3,12 +3,19 @@ package com.example.backend.entities;
 import com.example.backend.enums.VehicleStatus;
 import com.example.backend.enums.VehicleType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
-@Table(name = "vehicles")
 @Data
+@Table(name = "vehicles")
 public class Vehicle {
 
     @Id

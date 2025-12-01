@@ -1,11 +1,17 @@
 package com.example.backend.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
-@Table(name = "vehicle_location_history")
 @Data
+@Table(name = "vehicle_location_history")
 public class VehicleLocationHistory {
 
     @EmbeddedId

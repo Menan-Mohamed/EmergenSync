@@ -1,6 +1,6 @@
 package com.example.backend.enums;
 
-public enum IncidentState {
+public enum IncidentStatus {
     REPORTED,
     ASSIGNED,
     RESOLVED
