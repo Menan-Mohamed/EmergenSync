@@ -1,7 +1,7 @@
 package com.example.backend.enums;
 
 public enum UserRole {
-    ADMIN,
+    SYSTEM_ADMIN,
     DISPATCHER,
-    RESPONDER
+    EMERGENCY_RESPONDER
 }
