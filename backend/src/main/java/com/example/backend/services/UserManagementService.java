@@ -1,9 +1,9 @@
-package com.example.backend.service;
+package com.example.backend.services;
 
-import com.example.backend.dto.UserResponseDto;
-import com.example.backend.dto.UserViewCriteriaDto;
-import com.example.backend.entity.User;
-import com.example.backend.repository.UserRepository;
+import com.example.backend.dtos.UserResponseDto;
+import com.example.backend.dtos.UserViewCriteriaDto;
+import com.example.backend.entities.User;
+import com.example.backend.repositories.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
