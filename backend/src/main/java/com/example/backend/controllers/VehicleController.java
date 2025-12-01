@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/esm/vehicle")
+@RequestMapping("/ems/vehicle")
 public class VehicleController {
-    
+
     @Autowired
     private VehicleService vehicleService;
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getVehicle(@PathVariable Integer id){
         Optional<Vehicle> vehicle = vehicleService.getVehicleById(id);
@@ -39,9 +39,9 @@ public class VehicleController {
 
     @GetMapping
     public ResponseEntity<List<Vehicle>> getAllVehicles(@RequestParam(required = false) VehicleStatus status, @RequestParam(required = false) VehicleType type){
-        
+
         List<Vehicle> vehicles = vehicleService.getAllVehicles(status, type);
-        
+
         return ResponseEntity.ok(vehicles);
     }
 
@@ -60,7 +60,7 @@ public class VehicleController {
         }
         return ResponseEntity.ok("Location update successfully");
     }
-    
-    
-    
+
+
+
 }
