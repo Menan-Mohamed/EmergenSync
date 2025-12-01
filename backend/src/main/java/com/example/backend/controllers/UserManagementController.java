@@ -1,9 +1,9 @@
-package com.example.backend.controller;
+package com.example.backend.controllers;
 
 
-import com.example.backend.dto.UserResponseDto;
-import com.example.backend.dto.UserViewCriteriaDto;
-import com.example.backend.service.UserManagementService;
+import com.example.backend.dtos.UserResponseDto;
+import com.example.backend.dtos.UserViewCriteriaDto;
+import com.example.backend.services.UserManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;

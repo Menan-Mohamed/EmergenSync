@@ -58,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers("/api/dispatcher/**").permitAll()
                         .requestMatchers("/api/responder/**").permitAll()
+                        .requestMatchers("/api/users/**").permitAll()
                         .anyRequest().authenticated() // All other endpoints require authentication
                 )
                 // Stateless session (required for JWT)
