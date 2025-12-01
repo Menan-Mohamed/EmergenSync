@@ -18,7 +18,7 @@ import com.example.backend.repositories.VehicleRepository;
 @Service
 public class VehicleService {
     @Autowired
-    private VehicleRepository vehicleRepo;
+    private VehicleRepository vehicleRepository;
 
     @Autowired
     private VehicleLocationHistoryRepository vehicleLHRepo;
@@ -27,7 +27,7 @@ public class VehicleService {
     private AssignmentService assignmentService;
 
     public boolean updateVehicleLocation(Integer vehicleId, Double latitude, Double longitude){
-        Optional<Vehicle> findVehicle = vehicleRepo.findById(vehicleId);
+        Optional<Vehicle> findVehicle = vehicleRepository.findById(vehicleId);
 
         if (findVehicle.isEmpty()) {
             return false;
@@ -40,14 +40,14 @@ public class VehicleService {
         VehicleLocationHistory locationHistory = VehicleLocationHistory.builder()
                 .id(id)
                 .vehicle(vehicle)
-                .latitude(latitude.doubleValue())
-                .longitude(longitude.doubleValue())
+                .latitude(latitude)
+                .longitude(longitude)
                 .build();
         
         vehicleLHRepo.save(locationHistory);
 
         vehicle.setLastUpdate(LocalDateTime.now());
-        vehicleRepo.save(vehicle);
+        vehicleRepository.save(vehicle);
 
         assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
         
@@ -55,23 +55,23 @@ public class VehicleService {
     }
 
     public Optional<Vehicle> getVehicleById(Integer id){
-        return vehicleRepo.findById(id);
+        return vehicleRepository.findById(id);
     }
 
     public List<Vehicle> getAllVehicles(VehicleStatus status, VehicleType type){
         if(status != null && type != null){
-            return vehicleRepo.findByStatusAndType(status, type);
+            return vehicleRepository.findByStatusAndType(status, type);
         }
-        else if(type == null){
-            return vehicleRepo.findByStatus(status);
+        else if(status != null){
+            return vehicleRepository.findByStatus(status);
         }
-        else if(status == null){
-            return vehicleRepo.findByType(type);
+        else if(type != null){
+            return vehicleRepository.findByType(type);
         }
-        return vehicleRepo.findAll();
+        return vehicleRepository.findAll();
     }
 
     public Vehicle createVehicle(Vehicle vehicle){
-        return vehicleRepo.save(vehicle);
+        return vehicleRepository.save(vehicle);
     }
 }

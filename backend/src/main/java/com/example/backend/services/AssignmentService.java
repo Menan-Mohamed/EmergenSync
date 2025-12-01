@@ -85,8 +85,8 @@ public class AssignmentService {
         Double incidentLatitude, Double incidentLongitude) {
 
         double distance = haversineFormula.haversine(
-                vehicleLatitude.doubleValue(), vehicleLongitude.doubleValue(),
-                incidentLatitude.doubleValue(), incidentLongitude.doubleValue()
+                vehicleLatitude, vehicleLongitude,
+                incidentLatitude, incidentLongitude
         );
 
         return distance < 0.05; //50m

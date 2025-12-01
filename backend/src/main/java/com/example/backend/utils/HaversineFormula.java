@@ -1,5 +1,8 @@
 package com.example.backend.utils;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class HaversineFormula {
 
     public double haversine(double latitude1, double longitude1, double latitude2, double longitude2) {
