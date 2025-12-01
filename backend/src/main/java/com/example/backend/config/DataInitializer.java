@@ -1,6 +1,8 @@
 package com.example.backend.config;
 
 import com.example.backend.entities.User;
+import com.example.backend.enums.UserRole;
+import com.example.backend.enums.UserType;
 import com.example.backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -17,10 +19,10 @@ public class DataInitializer implements CommandLineRunner {
         if (!userRepository.existsByUsername("SystemAdmin")) {
             User admin = new User();
             admin.setUsername("SystemAdmin");
-            admin.setType(User.UserType.fire);
-            admin.setRole(User.UserRole.SYSTEM_ADMIN);
+            admin.setPassword("SystemAdmin2025");
+            admin.setType(UserType.FIRE);
+            admin.setRole(UserRole.SYSTEM_ADMIN);
             admin.setApproved(true);
-
             userRepository.save(admin);
             System.out.println("✓ Default admin user created successfully!");
         } else {
