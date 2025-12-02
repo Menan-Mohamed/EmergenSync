@@ -1,5 +1,6 @@
 package com.example.backend.controllers;
 
+import com.example.backend.dtos.IncidentDTO;
 import com.example.backend.entities.Incident;
 import com.example.backend.services.IncidentService;
 import com.example.backend.services.AssignmentService;
@@ -19,7 +20,7 @@ public class IncidentController {
     private AssignmentService assignmentService;
 
     @PostMapping
-    public Incident createIncident(@RequestBody Incident incident) {
+    public Incident createIncident(@RequestBody IncidentDTO incident) {
         return incidentService.createIncident(incident);
     }
 
