@@ -11,5 +11,4 @@ public class UserResponseDto {
     private String email;
     private UserType type;
     private UserRole role;
-    private boolean approved;
 }
