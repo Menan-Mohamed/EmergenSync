@@ -15,25 +15,22 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByUsername(String username);
 
     @Query(
-            value = "SELECT * FROM users u WHERE " +
-                    "(:search IS NULL OR u.username LIKE CONCAT('%', :search, '%') OR u.email LIKE CONCAT('%', :search, '%')) AND " +
-                    "(:type IS NULL OR u.type = :type) AND " +
-                    "(:role IS NULL OR u.role = :role) AND " +
-                    "(:approved IS NULL OR u.approved = :approved)",
+        value = "SELECT * FROM users u WHERE " +
+                "(:search IS NULL OR u.username LIKE CONCAT('%', :search, '%') OR u.email LIKE CONCAT('%', :search, '%')) AND " +
+                "(:type IS NULL OR u.type = :type) AND " +
+                "(:role IS NULL OR u.role = :role)",
 
-            countQuery = "SELECT COUNT(*) FROM users u WHERE " +
-                    "(:search IS NULL OR u.username LIKE CONCAT('%', :search, '%') OR u.email LIKE CONCAT('%', :search, '%')) AND " +
-                    "(:type IS NULL OR u.type = :type) AND " +
-                    "(:role IS NULL OR u.role = :role) AND " +
-                    "(:approved IS NULL OR u.approved = :approved)",
+        countQuery = "SELECT COUNT(*) FROM users u WHERE " +
+                "(:search IS NULL OR u.username LIKE CONCAT('%', :search, '%') OR u.email LIKE CONCAT('%', :search, '%')) AND " +
+                "(:type IS NULL OR u.type = :type) AND " +
+                "(:role IS NULL OR u.role = :role)",
 
-            nativeQuery = true
+        nativeQuery = true
     )
     Page<User> findByFilters(
             @Param("search") String search,
             @Param("type") String type,
             @Param("role") String role,
-            @Param("approved") Boolean approved,
             Pageable pageable
     );
 }

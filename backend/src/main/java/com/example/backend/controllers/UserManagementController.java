@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserManagementController {
 
     @Autowired
@@ -25,19 +25,11 @@ public class UserManagementController {
         return service.getUsers(criteria, page, size);
     }
 
-    @PutMapping("/{id}/approve")
-    public String approveUser(@PathVariable int id) {
-        service.approveUser(id);
-        return "User approved successfully";
-    }
-
     @DeleteMapping("/{id}")
     public String deleteUser(@PathVariable int id) {
         service.deleteUser(id);
         return "User deleted successfully";
     }
-
-
 
 }
 

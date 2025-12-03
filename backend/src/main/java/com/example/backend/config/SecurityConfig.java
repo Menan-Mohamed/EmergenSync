@@ -55,11 +55,11 @@ public class SecurityConfig {
                         .permitAll()
 
                         // Role-based endpoints
-                        .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/dispatcher/**").permitAll()
                         .requestMatchers("/api/responder/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .anyRequest().authenticated() // All other endpoints require authentication
+                        .requestMatchers("/api/users/**").permitAll()
+                        .anyRequest().permitAll() // All other endpoints require authentication
                 )
                 // Stateless session (required for JWT)
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -88,7 +88,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Allow all origins using pattern
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("*"));

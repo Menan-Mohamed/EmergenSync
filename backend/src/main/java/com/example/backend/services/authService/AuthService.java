@@ -1,6 +1,7 @@
 package com.example.backend.services.authService;
 
 import com.example.backend.dtos.authDTO.LoginDTO;
+import com.example.backend.dtos.authDTO.LoginResponseDTO;
 import com.example.backend.dtos.authDTO.UserDTO;
 import com.example.backend.entities.User;
 import com.example.backend.exception.BadRequestException;
@@ -50,7 +51,7 @@ public class AuthService {
         }
     }
 
-    public String Login(LoginDTO loginDTO) {
+    public LoginResponseDTO Login(LoginDTO loginDTO) {
 
         User user = userRepository.findByUsername(loginDTO.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("User does not exist"));
@@ -63,12 +64,13 @@ public class AuthService {
                     )
             );
         } catch (AuthenticationException e) {
-            throw new UnauthorizedException("Invalid email or password");
+            throw new UnauthorizedException("Invalid username or password");
         }
 
         String token = jwtAuthService.generateAuthToken(user);
-
-        return token;
+        
+        // Return both token and role
+        return new LoginResponseDTO(token, user.getRole().name());
     }
 
 }

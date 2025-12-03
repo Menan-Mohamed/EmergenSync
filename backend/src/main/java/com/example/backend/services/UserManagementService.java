@@ -31,21 +31,15 @@ public class UserManagementService {
             pageable = PageRequest.of(page, size);
         }
 
-        Page<User> users = repo.findByFilters(
-                filter.getSearch(),
-                filter.getType() != null ? filter.getType().name() : null,
-                filter.getRole() != null ? filter.getRole().name() : null,
-                filter.getApproved(),
-                pageable
-        );
+        // Handle nulls safely for enums
+        String type = (filter.getType() != null) ? filter.getType().name() : null;
+        String role = (filter.getRole() != null) ? filter.getRole().name() : null;
+        String search = (filter.getSearch() != null) ? filter.getSearch().trim() : "";
+
+        // Call repository method
+        Page<User> users = repo.findByFilters(search, type, role, pageable);
 
         return users.map(this::toDto);
-    }
-
-    public void approveUser(int id) {
-        User user = repo.findById(id).orElseThrow();
-//        user.setApproved(true);
-        repo.save(user);
     }
 
     private UserResponseDto toDto(User user) {

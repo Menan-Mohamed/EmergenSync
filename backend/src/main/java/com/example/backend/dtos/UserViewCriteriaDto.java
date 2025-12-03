@@ -9,7 +9,6 @@ public class UserViewCriteriaDto {
 
     private UserType type;
     private UserRole role;
-    private Boolean approved;
     private String search;
     private String sortBy ;
     private String sortDir ;
