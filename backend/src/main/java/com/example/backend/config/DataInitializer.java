@@ -24,7 +24,6 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPassword(encoder.encode("SystemAdmin2025"));
             admin.setType(UserType.FIRE);
             admin.setRole(UserRole.SYSTEM_ADMIN);
-            admin.setApproved(true);
             userRepository.save(admin);
             System.out.println("✓ Default admin user created successfully!");
         } else {
