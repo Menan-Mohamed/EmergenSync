@@ -11,7 +11,6 @@ public class UserMapper {
         user.setPassword(newUser.getPassword());
         user.setType(newUser.getType());
         user.setRole(newUser.getRole());
-        user.setApproved(false);
         return user;
     }
 }

@@ -1,6 +1,7 @@
 package com.example.backend.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,6 +60,8 @@ public class VehicleService {
         vehicleLHRepo.save(locationHistory);
 
         vehicle.setLastUpdate(LocalDateTime.now());
+        vehicle.setLatitude(latitude);
+        vehicle.setLongitude(longitude);
         vehicleRepository.save(vehicle);
 
         assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
@@ -83,7 +86,7 @@ public class VehicleService {
 
     }
 
-    public List<VehicleDto> getAllVehicles(VehicleStatus status, VehicleType type){
+    public List<VehicleDto> getVehiclesByFilter(VehicleStatus status, VehicleType type){
         List<Vehicle> vehicles;
         if(status != null && type != null){
             vehicles = vehicleRepository.findByStatusAndType(status, type);
@@ -134,9 +137,21 @@ public class VehicleService {
 
             vehicleLHRepo.save(initialLocation);
 
+            // Check waiting Incidents
+            assignmentService.assignWaitingIncidents(vehicle);
+
             return vehicleMapper.toDtoWithLocation(savedVehicle, initialLocation);
         }
 
         return vehicleMapper.toDto(savedVehicle);
+    }
+
+    public List<VehicleDto> getAllVehicles (){
+        List<Vehicle> vechicles = vehicleRepository.findAll();
+        List<VehicleDto> vechicleDtos = new ArrayList<>();
+        for(Vehicle i : vechicles){
+            vechicleDtos.add(vehicleMapper.toDto(i));
+        }
+        return vechicleDtos;
     }
 }

@@ -60,21 +60,21 @@ public class DispatchService {
     public VehicleDispatchDto findNearestVehicle(List<Vehicle> vehicles, Incident incident) {
 
         return vehicles.stream()
-        .map(vehicle -> {
-            VehicleLocationHistory latest = vehicleLHRepo.findFirstByIdVehicleIDOrderByIdTimeStampDesc(vehicle.getId());
+                .filter(vehicle -> vehicle.getLatitude() != null && vehicle.getLongitude() != null)
+                .map(vehicle -> {
+                    double distance = haversineFormula.haversine(
+                            vehicle.getLatitude(),
+                            vehicle.getLongitude(),
+                            incident.getLatitude(),
+                            incident.getLongitude()
+                    );
 
-            if (latest == null || latest.getLatitude() == null || latest.getLongitude() == null) {
-                return null;
-            }
-
-            double distance = haversineFormula.haversine(latest.getLatitude(), latest.getLongitude(), incident.getLatitude(), incident.getLongitude());
-
-            return vehicleMapper.toDispatchDto(vehicle, latest, distance);
-        })
-        .filter(dto -> dto != null)
-        .min(Comparator.comparing(VehicleDispatchDto::getDistanceToIncident))
-        .orElse(null);
+                    return vehicleMapper.toDispatchDto(vehicle, distance);
+                })
+                .min(Comparator.comparing(VehicleDispatchDto::getDistanceToIncident))
+                .orElse(null);
     }
+
 
     private VehicleType mapIncidentTypeToVehicleType(IncidentType incidentType) {
         switch (incidentType) {
@@ -86,6 +86,5 @@ public class DispatchService {
                 return VehicleType.MEDICAL;
         }
     }
-
 
 }

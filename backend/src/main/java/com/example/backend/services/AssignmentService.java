@@ -104,6 +104,8 @@ public class AssignmentService {
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicleRepository.save(vehicle);
 
+        // Check waiting Incidents
+        assignWaitingIncidents(vehicle);
 
     }
 
@@ -131,5 +133,13 @@ public class AssignmentService {
         }
     }
 
+
+    public void assignWaitingIncidents(Vehicle availableVehicle){
+        Incident waitingIncident = incidentRepository.findMostSevereReportedByType(availableVehicle.getType().toString());
+        if(waitingIncident == null){
+            return;
+        }
+        assignVehicle(availableVehicle, waitingIncident);
+    }
 
 }
