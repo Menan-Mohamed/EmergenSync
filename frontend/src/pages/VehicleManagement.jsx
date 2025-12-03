@@ -508,10 +508,7 @@ function VehicleManagement() {
     <div className="vehicle-management">
       {/* Left Side - Map */}
       <div className="map-section">
-        <div className="map-header">
-          <h2>Vehicle Dispatch Map</h2>
-          <p className="vehicle-count">Active Units: {vehicles.length}</p>
-        </div>
+        
         {loading ? (
           <div className="loading-spinner">Loading vehicles...</div>
         ) : (

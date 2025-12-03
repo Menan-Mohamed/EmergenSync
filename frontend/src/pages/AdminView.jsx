@@ -404,7 +404,7 @@ PageContent.propTypes = {
 
 function AdminView(props) {
   const { window } = props;
-  const [pathname, setPathname] = useState('/user-management');
+  const [pathname, setPathname] = useState('/vehicle-management');
 
   const router = {
     pathname,
@@ -420,6 +420,10 @@ function AdminView(props) {
       router={router}
       theme={demoTheme}
       window={demoWindow}
+      branding={{
+        logo: <img src="/logo.jpeg" alt="EmergenSync" style={{ height: 30, width: 'auto' }} />,
+        title: 'EmergenSync',
+      }}
     >
       <DashboardLayout disableCollapsibleSidebar>
         <PageContent pathname={pathname} />
