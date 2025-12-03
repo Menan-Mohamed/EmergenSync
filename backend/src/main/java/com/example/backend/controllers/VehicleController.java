@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.backend.services.VehicleService;
-import com.example.backend.entities.Vehicle;
+
+import jakarta.validation.Valid;
+
+import com.example.backend.dtos.CreateVehicleDto;
+import com.example.backend.dtos.VehicleDto;
 import com.example.backend.enums.VehicleStatus;
 import com.example.backend.enums.VehicleType;
 
@@ -30,7 +34,7 @@ public class VehicleController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getVehicle(@PathVariable Integer id){
-        Optional<Vehicle> vehicle = vehicleService.getVehicleById(id);
+        Optional<VehicleDto> vehicle = vehicleService.getVehicleById(id);
         if(vehicle.isEmpty()){
             return ResponseEntity.status(404).body("Vehicle not found");
         }
@@ -38,17 +42,23 @@ public class VehicleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Vehicle>> getAllVehicles(@RequestParam(required = false) VehicleStatus status, @RequestParam(required = false) VehicleType type){
+    public ResponseEntity<List<VehicleDto>> getAllVehicles(@RequestParam(required = false) VehicleStatus status, @RequestParam(required = false) VehicleType type){
 
-        List<Vehicle> vehicles = vehicleService.getAllVehicles(status, type);
+        List<VehicleDto> vehicles = vehicleService.getAllVehicles(status, type);
 
         return ResponseEntity.ok(vehicles);
     }
 
     @PostMapping
-    public ResponseEntity<Vehicle> createVehicle(@RequestBody Vehicle vehicle) {
-        Vehicle savedVehicle = vehicleService.createVehicle(vehicle);
-        return ResponseEntity.status(201).body(savedVehicle);
+    public ResponseEntity<?> createVehicle(@Valid @RequestBody CreateVehicleDto createVehicleDto) {
+        try{
+            VehicleDto savedVehicle = vehicleService.createVehicle(createVehicleDto);
+            return ResponseEntity.status(201).body(savedVehicle);
+        }
+        catch(RuntimeException e){
+            return ResponseEntity.status(400).body(e.getMessage());
+        }
+        
     }
 
     @PutMapping("/{id}/location")

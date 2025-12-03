@@ -37,6 +37,32 @@ public class AssignmentService {
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
 
+
+        //check if vehicle is actually available
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new RuntimeException("Vehicle is not available for assignment. Status: " + vehicle.getStatus());
+        }
+
+        //check if incident is in a valid state for assignment
+        if (incident.getStatus() != IncidentStatus.REPORTED) {
+            throw new RuntimeException("Incident cannot be assigned - current status: " + incident.getStatus());
+        }
+
+        //check if vehicle already has an active assignment
+        Assignment existingAssignment = assignmentRepository.findActiveAssignmentByVehicle(vehicle.getId());
+        if (existingAssignment != null) {
+            throw new RuntimeException("Vehicle already has an active assignment: " + vehicle.getId());
+        }
+
+        //verify vehicle type matches incident type
+        if (!isVehicleTypeMatchesIncident(vehicle, incident)) {
+            throw new RuntimeException(
+                    "Vehicle type mismatch! Cannot assign " + vehicle.getType() +
+                            " vehicle to " + incident.getType() + " incident. Vehicle ID: " +
+                            vehicle.getId() + ", Incident ID: " + incident.getId()
+            );
+        }
+
         vehicle.setStatus(VehicleStatus.ON_ROUTE);
         vehicleRepository.save(vehicle);
 
@@ -82,7 +108,7 @@ public class AssignmentService {
     }
 
     private boolean hasReached(Double vehicleLatitude, Double vehicleLongitude,
-        Double incidentLatitude, Double incidentLongitude) {
+                               Double incidentLatitude, Double incidentLongitude) {
 
         double distance = haversineFormula.haversine(
                 vehicleLatitude, vehicleLongitude,
@@ -91,5 +117,19 @@ public class AssignmentService {
 
         return distance < 0.05; //50m
     }
+
+    private boolean isVehicleTypeMatchesIncident(Vehicle vehicle, Incident incident) {
+        switch (incident.getType()) {
+            case FIRE:
+                return vehicle.getType().name().equals("FIRE");
+            case POLICE:
+                return vehicle.getType().name().equals("POLICE");
+            case MEDICAL:
+                return vehicle.getType().name().equals("MEDICAL");
+            default:
+                return false;
+        }
+    }
+
 
 }
