@@ -46,7 +46,11 @@ public class DispatchService {
             return;
         }
 
-        VehicleDispatchDto nearest = findNearestVehicle(available, incident);
+        VehicleDispatchDto nearestVehicleDto = findNearestVehicle(available, incident);
+
+        if(nearestVehicleDto == null) return;
+
+        Vehicle nearest = vehicleRepo.findById(nearestVehicleDto.getId()).orElse(null);
 
         if(nearest == null) return;
 
