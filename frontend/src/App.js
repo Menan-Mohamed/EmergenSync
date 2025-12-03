@@ -7,8 +7,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<VehicleManagement />} />
-        <Route path="/admin" element={<IncedintForm />} />
+        <Route path="/app/admin" element={<VehicleManagement />} />
+        <Route path="/app/user" element={<IncedintForm />} />
       </Routes>
     </BrowserRouter>
   );
