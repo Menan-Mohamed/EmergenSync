@@ -1,5 +1,6 @@
 package com.example.backend.services;
 
+import com.example.backend.dtos.VehicleDispatchDto;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
 import com.example.backend.entities.Incident;
@@ -35,21 +36,21 @@ public class AssignmentService {
     private HaversineFormula haversineFormula;
 
     @Transactional
-    public void assignVehicle(Vehicle vehicle, Incident incident) {
+    public void assignVehicle(VehicleDispatchDto nearest, Incident incident) {
 
-        vehicle.setStatus(VehicleStatus.ON_ROUTE);
-        vehicleRepository.save(vehicle);
+        nearest.setStatus(VehicleStatus.ON_ROUTE);
+        vehicleRepository.save(nearest);
 
         incident.setStatus(IncidentStatus.ASSIGNED);
         incidentRepository.save(incident);
 
         AssignmentID assignmentId = new AssignmentID();
-        assignmentId.setVehicleID(vehicle.getId());
+        assignmentId.setVehicleID(nearest.getId());
         assignmentId.setIncidentID(incident.getId());
 
         Assignment assignment = new Assignment();
         assignment.setId(assignmentId);
-        assignment.setVehicle(vehicle);
+        assignment.setVehicle(nearest);
         assignment.setIncident(incident);
         assignment.setAssignedAt(LocalDateTime.now());
 
