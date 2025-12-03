@@ -35,6 +35,12 @@ public class Vehicle {
     @Column(name="status", nullable = false)
     private VehicleStatus status;
 
+    @Column(name="longitude", nullable = false)
+    private Double longitude;
+
+    @Column(name="latitude" , nullable = false)
+    private Double latitude;
+
     @Column(name="lastUpdate")
     private LocalDateTime lastUpdate;
 

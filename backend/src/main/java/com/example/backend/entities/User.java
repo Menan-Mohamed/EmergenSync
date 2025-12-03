@@ -31,7 +31,4 @@ public class User {
     @Column(name = "role", nullable = false)
     private UserRole role;
 
-    @Column(name = "approved", nullable = false)
-    private boolean approved;
-
 }

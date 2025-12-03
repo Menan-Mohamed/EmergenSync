@@ -1,10 +1,16 @@
 package com.example.backend.services;
 
 
+import com.example.backend.dtos.IncidentDTO;
 import com.example.backend.entities.Incident;
+import com.example.backend.entities.Vehicle;
 import com.example.backend.enums.IncidentStatus;
+import com.example.backend.enums.IncidentType;
+import com.example.backend.mapper.IncidentMapper;
 import com.example.backend.repositories.IncidentRepository;
 import static com.example.backend.enums.IncidentStatus.REPORTED;
+
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,8 +27,10 @@ public class IncidentService {
    @Autowired
    private DispatchService dispatchService;
 
-   public Incident createIncident(Incident incident){
+   public Incident createIncident(IncidentDTO incidentdto){
 
+       IncidentMapper incidentMapper = new IncidentMapper();
+       Incident incident = incidentMapper.incidentDtoToincident(incidentdto);
        incident.setStatus(REPORTED);
        incident.setReportedAt(LocalDateTime.now());
        Incident savedIncident = incidentRepository.save(incident);
