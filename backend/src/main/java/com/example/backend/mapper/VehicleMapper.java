@@ -26,6 +26,8 @@ public class VehicleMapper {
                 .status(vehicle.getStatus())
                 .lastUpdate(vehicle.getLastUpdate())
                 .responderId(vehicle.getResponder().getId())
+                .latitude(vehicle.getLatitude())
+                .longitude(vehicle.getLongitude())
                 // .responderUsername(vehicle.getResponder().getUsername())
                 // .responderEmail(vehicle.getResponder().getEmail())
                 .build();

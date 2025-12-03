@@ -1,5 +1,7 @@
 package com.example.backend.services;
 
+import com.example.backend.dtos.AssignmentDto;
+import com.example.backend.dtos.VehicleDto;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
 import com.example.backend.entities.Incident;
@@ -7,6 +9,7 @@ import com.example.backend.entities.Vehicle;
 import com.example.backend.enums.VehicleStatus;
 import com.example.backend.enums.IncidentStatus;
 
+import com.example.backend.mapper.AssignmentMapper;
 import com.example.backend.repositories.AssignmentRepository;
 import com.example.backend.repositories.IncidentRepository;
 import com.example.backend.repositories.VehicleRepository;
@@ -17,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Service
@@ -33,6 +38,9 @@ public class AssignmentService {
 
     @Autowired
     private HaversineFormula haversineFormula;
+
+    @Autowired
+    private AssignmentMapper assignmentMapper;
 
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -141,5 +149,15 @@ public class AssignmentService {
         }
         assignVehicle(availableVehicle, waitingIncident);
     }
+
+    public List<AssignmentDto> getAllAssignment (){
+        List<Assignment> assignments = assignmentRepository.findAll();
+        List<AssignmentDto> assignmentDtos = new ArrayList<>();
+        for(Assignment i : assignments){
+            assignmentDtos.add(assignmentMapper.assigmenttoassignmentDto(i));
+        }
+        return assignmentDtos;
+    }
+
 
 }
