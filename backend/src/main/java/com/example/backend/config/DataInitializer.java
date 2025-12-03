@@ -15,6 +15,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
 
+
     @Override
     public void run(String... args) throws Exception {
         // Check if admin user already exists
