@@ -53,11 +53,13 @@ public class VehicleMapper {
                 .responder(responder)
                 .status(VehicleStatus.AVAILABLE)
                 .lastUpdate(LocalDateTime.now())
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
                 .build();
     }
 
-    public VehicleDispatchDto toDispatchDto(Vehicle vehicle, VehicleLocationHistory locationHistory, double distance){
-        if(vehicle == null || locationHistory == null){
+    public VehicleDispatchDto toDispatchDto(Vehicle vehicle, double distance){
+        if(vehicle == null){
             return null;
         }
 
@@ -66,9 +68,9 @@ public class VehicleMapper {
                 .type(vehicle.getType())
                 .status(vehicle.getStatus())
                 .lastUpdate(vehicle.getLastUpdate())
-                .latitude(locationHistory.getLatitude())
-                .longitude(locationHistory.getLongitude())
-                .locationTimeStamp(locationHistory.getId().getTimeStamp())
+                .latitude(vehicle.getLatitude())
+                .longitude(vehicle.getLongitude())
+//                .locationTimeStamp(locationHistory.getId().getTimeStamp())
                 .distanceToIncident(distance)
                 .responderId(vehicle.getResponder().getId())
                 .build();

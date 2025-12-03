@@ -44,7 +44,7 @@ public class UserManagementService {
 
     public void approveUser(int id) {
         User user = repo.findById(id).orElseThrow();
-        user.setApproved(true);
+//        user.setApproved(true);
         repo.save(user);
     }
 
@@ -55,7 +55,6 @@ public class UserManagementService {
         dto.setEmail(user.getEmail());
         dto.setType(user.getType());
         dto.setRole(user.getRole());
-        dto.setApproved(user.isApproved());
         return dto;
     }
 

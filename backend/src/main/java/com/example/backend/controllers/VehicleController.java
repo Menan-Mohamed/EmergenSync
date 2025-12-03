@@ -42,9 +42,9 @@ public class VehicleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VehicleDto>> getAllVehicles(@RequestParam(required = false) VehicleStatus status, @RequestParam(required = false) VehicleType type){
+    public ResponseEntity<List<VehicleDto>> getVehiclesByFilter(@RequestParam(required = false) VehicleStatus status, @RequestParam(required = false) VehicleType type){
 
-        List<VehicleDto> vehicles = vehicleService.getAllVehicles(status, type);
+        List<VehicleDto> vehicles = vehicleService.getVehiclesByFilter(status, type);
 
         return ResponseEntity.ok(vehicles);
     }
@@ -71,6 +71,12 @@ public class VehicleController {
         return ResponseEntity.ok("Location update successfully");
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<VehicleDto>> getAllVehicles(){
 
+        List<VehicleDto> vehicles = vehicleService.getAllVehicles();
+
+        return ResponseEntity.ok(vehicles);
+    }
 
 }
