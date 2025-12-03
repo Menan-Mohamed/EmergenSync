@@ -40,19 +40,19 @@ const vehicleIcons = {
 // Custom icons for different incident types with emojis
 const incidentIcons = {
   MEDICAL: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FF1744"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" font-family="Arial">🩸</text></svg>',
+    iconUrl:'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FF6F00"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%A9%B8 </text></svg>',
     iconSize: [50, 50],
     iconAnchor: [25, 50],
     popupAnchor: [0, -50],
   }),
   FIRE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FF6F00"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" font-family="Arial">🔥</text></svg>',
+    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FFC107"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%94%A5 </text></svg>',
     iconSize: [50, 50],
     iconAnchor: [25, 50],
     popupAnchor: [0, -50],
   }),
   POLICE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FFD600"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" font-family="Arial">🚨</text></svg>',
+    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%232196F3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%9A%A8 </text></svg>',
     iconSize: [50, 50],
     iconAnchor: [25, 50],
     popupAnchor: [0, -50],
@@ -144,15 +144,18 @@ function IncidentMarkers({ incidents }) {
       return null;
     }
 
+    const incidentId = incident.id ?? incident.incidentId ?? 'N/A';
+
     return (
       <Marker
-        key={`incident-${index}`}
+        key={`incident-${incidentId}`}
         position={[lat, lng]}
         icon={incidentIcons[incident.type] || incidentIcons.POLICE}
       >
         <Popup>
           <div className="marker-popup">
             <strong>{incidentEmojis[incident.type] || '📍'} {incident.type} Incident</strong>
+            <p>ID: #{incidentId}</p>
             <p>Description: {incident.description}</p>
             <p>Severity: {incident.severity || 'N/A'}</p>
             <p>Status: {incident.status || 'Reported'}</p>
@@ -295,10 +298,20 @@ function VehicleManagement() {
   const unsolvedIncidents = incidents.filter((inc) => !isIncidentSolved(inc));
   const solvedIncidents = incidents.filter((inc) => isIncidentSolved(inc));
 
-  // Get incidents matching the vehicle type for modal display
+  // Get ACTIVE incidents matching the vehicle type for modal display
+  // Filter by: same type, active status, and not yet assigned
   const getIncidentsForVehicle = (vehicle) => {
     if (!vehicle) return [];
-    return unsolvedIncidents.filter((inc) => inc.type === vehicle.type);
+    
+    return unsolvedIncidents.filter((inc) => {
+      // Match vehicle type
+      if (inc.type !== vehicle.type) return false;
+      
+      // Only show incidents with REPORTED or ASSIGNED status
+      if (inc.status !== 'REPORTED' && inc.status !== 'ASSIGNED') return false;
+      
+      return true;
+    });
   };
 
   const handleLocationSelect = (location) => {
@@ -406,9 +419,9 @@ function VehicleManagement() {
     setUpdateLocation(null);
   };
 
-  const handleUpdateLocationSelect = (location) => {
-    setUpdateLocation(location);
-  };
+  // const handleUpdateLocationSelect = (location) => {
+  //   setUpdateLocation(location);
+  // };
 
   const handleCancelUpdate = () => {
     setEditingVehicle(null);
@@ -647,33 +660,77 @@ function VehicleManagement() {
             </div>
 
             <div className="modal-body">
-              <p className="modal-instruction">Click on the map to select a new location</p>
-              {editingVehicle && (
-                <MapContainer
-                  center={[updateLocation?.latitude || parseFloat(editingVehicle.latitude) || 26.8206, updateLocation?.longitude || parseFloat(editingVehicle.longitude) || 30.8025]}
-                  zoom={6}
-                  scrollWheelZoom={true}
-                  className="modal-map"
-                  key={`modal-map-${editingVehicle.id}`}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              <div style={{ flexShrink: 0 }}>
+                <p className="modal-instruction">Enter new coordinates for this unit</p>
+                {getIncidentsForVehicle(editingVehicle).length > 0 ? (
+                  <p className="modal-instruction" style={{ fontSize: '13px', color: '#888' }}>
+                    Showing {getIncidentsForVehicle(editingVehicle).length} active {editingVehicle.type} incident{getIncidentsForVehicle(editingVehicle).length !== 1 ? 's' : ''} available for dispatch
+                  </p>
+                ) : (
+                  <p className="modal-instruction" style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>
+                    No active incidents of type {editingVehicle.type} at this time
+                  </p>
+                )}
+              </div>
+
+              <div style={{ flexShrink: 0, display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '6px', color: '#333', fontWeight: '600', fontSize: '13px' }}>Latitude *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="e.g., 26.8206"
+                    value={updateLocation?.latitude || ''}
+                    onChange={(e) => {
+                      const lat = parseFloat(e.target.value);
+                      if (!isNaN(lat)) {
+                        setUpdateLocation({
+                          latitude: lat,
+                          longitude: updateLocation?.longitude || 0,
+                        });
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d0d0d0',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  {/* Show filtered incidents matching vehicle type */}
-                  {getIncidentsForVehicle(editingVehicle).length > 0 && (
-                    <IncidentMarkers incidents={getIncidentsForVehicle(editingVehicle)} />
-                  )}
-                  <LocationSelectMarker
-                    onLocationSelect={handleUpdateLocationSelect}
-                    selectedLocation={updateLocation}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '6px', color: '#333', fontWeight: '600', fontSize: '13px' }}>Longitude *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="e.g., 30.8025"
+                    value={updateLocation?.longitude || ''}
+                    onChange={(e) => {
+                      const lng = parseFloat(e.target.value);
+                      if (!isNaN(lng)) {
+                        setUpdateLocation({
+                          latitude: updateLocation?.latitude || 0,
+                          longitude: lng,
+                        });
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d0d0d0',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                </MapContainer>
-              )}
+                </div>
+              </div>
 
               {updateLocation && (
-                <div className="location-info" style={{ marginTop: '12px', flexShrink: 0 }}>
-                  <p className="location-label">Selected Location:</p>
+                <div className="location-info" style={{ flexShrink: 0 }}>
+                  <p className="location-label">Current Selection:</p>
                   <p className="location-coords">
                     {updateLocation.latitude.toFixed(4)}°, {updateLocation.longitude.toFixed(4)}°
                   </p>

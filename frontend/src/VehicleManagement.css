@@ -438,10 +438,11 @@
   flex-direction: column;
   overflow-y: auto;
   min-height: 0;
+  gap: 16px;
 }
 
 .modal-instruction {
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   color: #666;
   font-size: 14px;
   font-style: italic;
@@ -454,6 +455,12 @@
   border-radius: 6px;
   border: 1px solid #e0e0e0;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.modal-map .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .modal-footer {
