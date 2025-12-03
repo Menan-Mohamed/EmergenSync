@@ -30,6 +30,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import VehicleManagement from './VehicleManagement';
 
 const NAVIGATION = [
   {
@@ -365,26 +366,6 @@ function UserManagement() {
   );
 }
 
-// Vehicle Management Component (Placeholder)
-function VehicleManagement() {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Vehicle Management
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
-        Vehicle management interface will appear here. This would typically include:
-      </Typography>
-      <Box component="ul" sx={{ mt: 2 }}>
-        <li>Interactive map with vehicle tracking</li>
-        <li>Vehicle status monitoring</li>
-        <li>Assignment management</li>
-        <li>Incident response coordination</li>
-      </Box>
-    </Box>
-  );
-}
-
 // Analytics Component
 function Analytics() {
   return (
@@ -405,7 +386,11 @@ function PageContent({ pathname }) {
     case '/user-management':
       return <UserManagement />;
     case '/vehicle-management':
-      return <VehicleManagement />;
+      return (
+        <Box sx={{ height: '100%', overflow: 'hidden' }}>
+          <VehicleManagement />
+        </Box>
+      );
     case '/analytics':
       return <Analytics />;
     default:
