@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/dispatcher/**").permitAll()
                         .requestMatchers("/api/responder/**").permitAll()
-                        .requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().permitAll() // All other endpoints require authentication
                 )
                 // Stateless session (required for JWT)
