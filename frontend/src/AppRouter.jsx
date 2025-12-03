@@ -41,9 +41,7 @@ export default function AppRouter() {
       <Route
         path="/user"
         element={
-          <ProtectedRoute role="user">
             <ReporterView />
-          </ProtectedRoute>
         }
       />
 

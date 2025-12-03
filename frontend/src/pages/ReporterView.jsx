@@ -108,8 +108,7 @@ function ReporterView() {
       };
 
       // Send to backend controller: POST /api/dispatcher/incidents
-      // keep relative path so dev server proxy or same-origin works
-      const response = await fetch('/api/dispatcher/incidents', {
+      const response = await fetch('http://localhost:8080/api/dispatcher/incidents', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

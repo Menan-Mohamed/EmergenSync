@@ -30,21 +30,40 @@ export default function CredentialsSignInPage() {
           password,
         }),
       });
-
+      // If response is not ok, try to parse the error body for details
       if (!response.ok) {
-        throw new Error("Invalid username or password");
+        let errText = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errText = errBody.message || JSON.stringify(errBody);
+        } catch (e) {
+          try {
+            const errBody = await response.text();
+            errText = errBody;
+          } catch (_e) {}
+        }
+        throw new Error(errText || "Invalid username or password");
       }
 
       const data = await response.json();
       console.log("Server response:", data);
 
+      // Be flexible with response shape: token may live at data.data.token, data.token, or data.accessToken
+      const token = data?.data?.token ?? data?.token ?? data?.accessToken ?? null;
+      const role = data?.data?.role ?? data?.role ?? null;
+
+      if (!token) {
+        console.warn('No token found in login response:', data);
+        throw new Error('Login succeeded but no token returned by server');
+      }
+
       const userData = {
         username,
-        token: data.data.token,  // ✅ Extract token from data.data
-        role: data.data.role,    // ✅ Extract role from data.data
+        token,
+        role,
       };
 
-      console.log("Extracted userData:", userData); // Add this to verify
+      console.log("Extracted userData:", userData);
 
       login(userData);
 

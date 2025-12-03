@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../auth/AuthContext';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import './VehicleManagement.css';
@@ -14,6 +15,7 @@ L.Icon.Default.mergeOptions({
 // API base URLs
 const VEHICLE_API_BASE_URL = 'http://localhost:8080/api/responder/vehicle';
 const INCIDENT_API_BASE_URL = 'http://localhost:8080/api/dispatcher/incidents';
+const ASSIGNMENT_API_BASE_URL = 'http://localhost:8080/api/assignments';
 
 // Custom icons for different vehicle types using SVG data URLs
 const vehicleIcons = {
@@ -210,18 +212,24 @@ function VehicleManagement() {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [updateLocation, setUpdateLocation] = useState(null);
   const [updatingLocation, setUpdatingLocation] = useState(false);
+  // Get auth user (may be null)
+  const { user } = useContext(AuthContext);
 
   // Fetch all vehicles and incidents from database on component mount
   useEffect(() => {
+    // Fetch data; include auth header when available
     fetchVehicles();
     fetchIncidents();
     fetchAssignments();
-  }, []);
+    // Re-run when user changes (e.g., after login)
+  }, [user]);
 
   const fetchVehicles = async () => {
     try {
       setError('');
-      const response = await fetch(`${VEHICLE_API_BASE_URL}/all`);
+      const headers = {};
+      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
+      const response = await fetch(`${VEHICLE_API_BASE_URL}/all`, { headers });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch vehicles: ${response.statusText}`);
@@ -247,7 +255,9 @@ function VehicleManagement() {
 
   const fetchIncidents = async () => {
     try {
-      const response = await fetch(INCIDENT_API_BASE_URL);
+      const headers = {};
+      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
+      const response = await fetch(INCIDENT_API_BASE_URL, { headers });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch incidents: ${response.statusText}`);
@@ -271,11 +281,39 @@ function VehicleManagement() {
 
   const fetchAssignments = async () => {
     try {
-      const response = await fetch('/api/assignments/all');
+      const headers = {};
+      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
+      const response = await fetch(`${ASSIGNMENT_API_BASE_URL}/all`, { headers });
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch assignments: ${response.statusText}`);
+        // Try to parse error body for message
+        let errText = `HTTP ${response.status}`;
+        try {
+          const ct = response.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const errBody = await response.json();
+            errText = errBody.message || JSON.stringify(errBody);
+          } else {
+            const txt = await response.text();
+            errText = txt.substring(0, 400);
+          }
+        } catch (e) {
+          console.error('Error parsing assignments error body', e);
+        }
+        throw new Error(`Failed to fetch assignments: ${errText}`);
       }
-      const data = await response.json();
+
+      // Ensure we only parse JSON when server sends JSON
+      const contentType = response.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.warn('Expected JSON for assignments but received:', text.slice(0, 200));
+        throw new Error('Assignments endpoint returned non-JSON (likely an HTML error or redirect)');
+      }
+
       console.log('Fetched assignments:', data);
       setAssignments(data || []);
     } catch (err) {
