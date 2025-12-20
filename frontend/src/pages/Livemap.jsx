@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext  } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import './Livemap.css';
@@ -211,32 +211,31 @@ function LiveMap({
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
+    if (!user?.token) return;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const [vehiclesData, incidentsData] = await Promise.all([
+          fetchVehicles(user.token),
+          fetchIncidents(user.token)
+        ]);
+
+        setVehicles(vehiclesData);
+        setIncidents(incidentsData);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
-  },);
+  }, [user?.token]);
 
-  const loadData = async () => {
-    try {
-      setError('');
-      const token = user && user.token ? user.token : null;
-
-      const [vehiclesData, incidentsData] = await Promise.all([
-        fetchVehicles(token).catch(err => {
-          setError(`Error loading vehicles: ${err.message}`);
-          console.error('Fetch vehicles error:', err);
-          return [];
-        }),
-        fetchIncidents(token).catch(err => {
-          console.error('Fetch incidents error:', err);
-          return [];
-        })
-      ]);
-
-      setVehicles(vehiclesData);
-      setIncidents(incidentsData);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="map-section">

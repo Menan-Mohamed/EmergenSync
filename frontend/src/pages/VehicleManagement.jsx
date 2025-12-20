@@ -30,39 +30,31 @@ function VehicleManagement() {
   // Get auth user (may be null)
   const { user } = useContext(AuthContext);
 
-  // Fetch all vehicles and incidents from database on component mount
   useEffect(() => {
+    if (!user?.token) return;
+
+    const loadData = async () => {
+      try {
+        setError('');
+
+        const [vehiclesData, incidentsData, assignmentsData] = await Promise.all([
+          fetchVehicles(user.token),
+          fetchIncidents(user.token),
+          fetchAssignments(user.token),
+        ]);
+
+        setVehicles(vehiclesData);
+        setIncidents(incidentsData);
+        setAssignments(assignmentsData);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load admin data');
+      }
+    };
+
     loadData();
-  },);
+  }, [user?.token]);
 
-  const loadData = async () => {
-    try {
-      setError('');
-      const token = user && user.token ? user.token : null;
-
-      const [vehiclesData, incidentsData, assignmentsData] = await Promise.all([
-        fetchVehicles(token).catch(err => {
-          setError(`Error loading vehicles: ${err.message}`);
-          console.error('Fetch vehicles error:', err);
-          return [];
-        }),
-        fetchIncidents(token).catch(err => {
-          console.error('Fetch incidents error:', err);
-          return [];
-        }),
-        fetchAssignments(token).catch(err => {
-          console.error('Fetch assignments error:', err);
-          return [];
-        })
-      ]);
-
-      setVehicles(vehiclesData);
-      setIncidents(incidentsData);
-      setAssignments(assignmentsData);
-    } finally {
-      // setLoading(false);
-    }
-  };
 
   // Helper to determine if an incident is solved based on assignments
   const isIncidentSolved = (incident) => {
