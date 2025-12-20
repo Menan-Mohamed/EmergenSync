@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -20,6 +20,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import { AuthContext } from '../auth/AuthContext'; 
 
 const columns = [
   { id: 'select', label: '', minWidth: 40 },
@@ -31,6 +32,7 @@ const columns = [
 ];
 
 export default function UserManagement() {
+  const { user } = useContext(AuthContext);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [users, setUsers] = useState([]);
@@ -65,27 +67,33 @@ export default function UserManagement() {
       }
       
       if (typeFilter) {
-        criteria.type = typeFilter; // Send as string, Spring will convert to enum
+        criteria.type = typeFilter;
       }
       
       if (roleFilter) {
-        criteria.role = roleFilter; // Send as string, Spring will convert to enum
+        criteria.role = roleFilter;
       }
 
-      console.log('Sending criteria:', criteria); // Debug what we're sending
+      console.log('Sending criteria:', criteria);
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (user && user.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
 
       const response = await fetch(
         `http://localhost:8080/api/users/filter?page=${page}&size=${rowsPerPage}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
           body: JSON.stringify(criteria),
         }
       );
 
-      console.log('Response status:', response.status); // Debug response status
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -106,7 +114,7 @@ export default function UserManagement() {
     } finally {
       setLoading(false);
     }
-  }, [search, typeFilter, roleFilter, page, rowsPerPage]);
+  }, [search, typeFilter, roleFilter, page, rowsPerPage, user]);
 
   useEffect(() => {
     fetchUsers();
@@ -133,7 +141,15 @@ export default function UserManagement() {
     if (!window.confirm('Delete this user?')) return;
 
     try {
-      await fetch(`http://localhost:8080/api/users/${id}`, { method: 'DELETE' });
+      const headers = {};
+      if (user && user.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
+
+      await fetch(`http://localhost:8080/api/users/${id}`, { 
+        method: 'DELETE',
+        headers: headers 
+      });
       fetchUsers();
     } catch (err) {
       console.error('Delete error:', err);
@@ -146,8 +162,16 @@ export default function UserManagement() {
 
     if (!window.confirm(`Delete ${selected.length} users?`)) return;
 
+    const headers = {};
+    if (user && user.token) {
+      headers['Authorization'] = `Bearer ${user.token}`;
+    }
+
     for (const id of selected) {
-      await fetch(`http://localhost:8080/api/users/${id}`, { method: 'DELETE' });
+      await fetch(`http://localhost:8080/api/users/${id}`, { 
+        method: 'DELETE',
+        headers: headers 
+      });
     }
 
     setSelected([]);
@@ -164,9 +188,17 @@ export default function UserManagement() {
   // Add user
   const handleAddUser = async () => {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (user && user.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
+
       await fetch(`http://localhost:8080/api/auth/signup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(newUser),
       });
 

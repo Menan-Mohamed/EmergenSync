@@ -143,8 +143,11 @@ function ReporterView() {
 
   return (
     <div className="incident-form-container">
+      {/* background logo (from public/) positioned outside the form */}
+      <img src="/logo.jpeg" alt="logo background" className="bg-logo" />
+
       <div className="form-wrapper">
-        <h1>Report an Incident</h1>
+        <h1 className="report-header">Report an Incident</h1>
 
         {submitted && (
           <div className="success-message">

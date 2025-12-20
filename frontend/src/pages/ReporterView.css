@@ -9,6 +9,7 @@
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   box-sizing: border-box;
+  position: relative;
 }
 
 .form-wrapper {
@@ -19,7 +20,28 @@
   max-width: 700px;
   width: 100%;
   position: relative;
+  z-index: 2;
+}
+
+/* Background logo positioned outside the form */
+.bg-logo {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
   z-index: 1;
+  border-radius: 6px;
+}
+
+.report-header {
+  color: #263238;
+  margin-bottom: 18px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  display: block;
 }
 
 h1 {
@@ -113,7 +135,8 @@ select {
 }
 
 .map-container {
-  height: 400px;
+  /* keep map responsive so the form doesn't overflow viewport */
+  height: min(420px, 40vh);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -174,7 +197,7 @@ select {
   }
 
   .map-container {
-    height: 300px;
+    height: min(300px, 35vh);
   }
 
   .incident-form-container {

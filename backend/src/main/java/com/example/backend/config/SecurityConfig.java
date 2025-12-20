@@ -55,11 +55,12 @@ public class SecurityConfig {
                         .permitAll()
 
                         // Role-based endpoints
-                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers("/api/dispatcher/**").permitAll()
-                        .requestMatchers("/api/responder/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .anyRequest().permitAll() // All other endpoints require authentication
+                        .requestMatchers("/api/users/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/responder/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .anyRequest().authenticated()// All other endpoints require authentication
                 )
                 // Stateless session (required for JWT)
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
