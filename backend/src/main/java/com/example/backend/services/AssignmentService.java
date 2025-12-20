@@ -1,7 +1,7 @@
 package com.example.backend.services;
 
 import com.example.backend.dtos.AssignmentDto;
-import com.example.backend.dtos.VehicleDto;
+import com.example.backend.dtos.Point;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
 import com.example.backend.entities.Incident;
@@ -15,6 +15,7 @@ import com.example.backend.repositories.IncidentRepository;
 import com.example.backend.repositories.VehicleRepository;
 
 import com.example.backend.utils.HaversineFormula;
+import com.example.backend.utils.OsrmRouting;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,9 @@ public class AssignmentService {
 
     @Autowired
     private AssignmentMapper assignmentMapper;
+
+    @Autowired
+    private OsrmRouting routingFind;
 
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -89,6 +93,11 @@ public class AssignmentService {
 
         assignmentRepository.save(assignment);
 
+        List<Point> route = routingFind.getBestRoutePoints(vehicle.getLongitude(), vehicle.getLatitude(), incident.getLongitude(), incident.getLatitude());
+        for(int i=0 ; i< route.size() ; i++){
+            System.out.println(i);
+            System.out.println(route.get(i).getLongitude() + "  " + route.get(i).getLatitude());
+        }
     }
 
     public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
