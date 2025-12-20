@@ -1,207 +1,21 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../auth/AuthContext';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import LiveMap from './Livemap';
+import {
+  fetchVehicles,
+  fetchIncidents,
+  fetchAssignments,
+  createVehicle,
+  updateVehicleLocation
+} from '../services/Service';
 import './VehicleManagement.css';
 
-// Fix for default marker icon in leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-});
-
-// API base URLs
-const VEHICLE_API_BASE_URL = 'http://localhost:8080/api/responder/vehicle';
-const INCIDENT_API_BASE_URL = 'http://localhost:8080/api/dispatcher/incidents';
-const ASSIGNMENT_API_BASE_URL = 'http://localhost:8080/api/assignments';
-
-// Custom icons for different vehicle types using SVG data URLs
-const vehicleIcons = {
-  MEDICAL: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23E74C3C"/><path d="M10 15H40C41.1046 15 42 15.8954 42 17V35C42 36.1046 41.1046 37 40 37H10C8.89543 37 8 36.1046 8 35V17C8 15.8954 8.89543 15 10 15Z" fill="%23FFFFFF"/><path d="M12 28H20M16 24V32" stroke="%23E74C3C" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="38" r="3" fill="%23555"/><circle cx="36" cy="38" r="3" fill="%23555"/><rect x="35" y="20" width="5" height="8" fill="%23444"/></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-  FIRE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FF8C00"/><path d="M10 18H40C41.1046 18 42 18.8954 42 20V33C42 34.1046 41.1046 35 40 35H10C8.89543 35 8 34.1046 8 33V20C8 18.8954 8.89543 18 10 18Z" fill="%23FFFFFF"/><circle cx="15" cy="10" r="2" fill="%23FF0000"/><circle cx="20" cy="8" r="2" fill="%23FF0000"/><circle cx="25" cy="9" r="2" fill="%23FF0000"/><circle cx="30" cy="8" r="2" fill="%23FF0000"/><circle cx="35" cy="10" r="2" fill="%23FF0000"/><circle cx="14" cy="37" r="3" fill="%23555"/><circle cx="36" cy="37" r="3" fill="%23555"/><rect x="18" y="22" width="14" height="8" fill="%23FFD700" opacity="0.7"/></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-  POLICE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%230047AB"/><path d="M10 18H40C41.1046 18 42 18.8954 42 20V33C42 34.1046 41.1046 35 40 35H10C8.89543 35 8 34.1046 8 33V20C8 18.8954 8.89543 18 10 18Z" fill="%23FFFFFF"/><rect x="16" y="8" width="8" height="8" fill="%23FF0000" rx="1"/><rect x="26" y="8" width="8" height="8" fill="%23FF0000" rx="1"/><rect x="18" y="10" width="4" height="4" fill="%230047AB"/><rect x="28" y="10" width="4" height="4" fill="%230047AB"/><circle cx="14" cy="37" r="3" fill="%23555"/><circle cx="36" cy="37" r="3" fill="%23555"/><path d="M22 22H28M25 19V25" stroke="%230047AB" stroke-width="1.5" stroke-linecap="round"/></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-};
-
-// Custom icons for different incident types with emojis
-const incidentIcons = {
-  MEDICAL: new L.Icon({
-    iconUrl:'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FF6F00"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%A9%B8 </text></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-  FIRE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%23FFC107"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%94%A5 </text></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-  POLICE: new L.Icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="4" fill="%232196F3"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28"> %F0%9F%9A%A8 </text></svg>',
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50],
-  }),
-};
-
-// Vehicle markers component that displays all vehicles on the map
-function VehicleMarkers({ vehicles }) {
-  const vehicleEmojis = {
-    MEDICAL: '🚑',
-    FIRE: '🚒',
-    POLICE: '🚓',
-  };
-
-  if (!vehicles || vehicles.length === 0) {
-    console.log('No vehicles to display');
-    return null;
-  }
-
-  console.log('Rendering VehicleMarkers with', vehicles.length, 'vehicles');
-
-  return vehicles.map((vehicle) => {
-    console.log('Processing vehicle:', vehicle);
-
-    if (!vehicle) {
-      console.warn('Null vehicle');
-      return null;
-    }
-
-    const lat = parseFloat(vehicle.latitude);
-    const lng = parseFloat(vehicle.longitude);
-
-    console.log(`Vehicle ${vehicle.id}: lat=${lat}, lng=${lng}, type=${vehicle.type}`);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      console.warn(`Invalid coordinates for vehicle ${vehicle.id}:`, { latitude: vehicle.latitude, longitude: vehicle.longitude });
-      return null;
-    }
-
-    return (
-      <Marker
-        key={vehicle.id}
-        position={[lat, lng]}
-        icon={vehicleIcons[vehicle.type] || vehicleIcons.POLICE}
-      >
-        <Popup>
-          <div className="marker-popup">
-            <strong>{vehicleEmojis[vehicle.type] || '🚗'} {vehicle.type}</strong>
-            <p>ID: {vehicle.id}</p>
-            <p>Status: {vehicle.status}</p>
-            <p>Responder: {vehicle.responderId}</p>
-          </div>
-        </Popup>
-      </Marker>
-    );
-  });
-}
-
-// Incident markers component that displays all incidents on the map
-function IncidentMarkers({ incidents }) {
-  const incidentEmojis = {
-    MEDICAL: '🩸',
-    FIRE: '🔥',
-    POLICE: '🚨',
-  };
-
-  if (!incidents || incidents.length === 0) {
-    console.log('No incidents to display');
-    return null;
-  }
-
-  console.log('Rendering IncidentMarkers with', incidents.length, 'incidents');
-
-  return incidents.map((incident, index) => {
-    console.log('Processing incident:', incident);
-
-    if (!incident) {
-      console.warn('Null incident');
-      return null;
-    }
-
-    const lat = parseFloat(incident.latitude);
-    const lng = parseFloat(incident.longitude);
-
-    console.log(`Incident ${index}: lat=${lat}, lng=${lng}, type=${incident.type}`);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      console.warn(`Invalid coordinates for incident ${index}:`, { latitude: incident.latitude, longitude: incident.longitude });
-      return null;
-    }
-
-    const incidentId = incident.id ?? incident.incidentId ?? 'N/A';
-
-    return (
-      <Marker
-        key={`incident-${incidentId}`}
-        position={[lat, lng]}
-        icon={incidentIcons[incident.type] || incidentIcons.POLICE}
-      >
-        <Popup>
-          <div className="marker-popup">
-            <strong>{incidentEmojis[incident.type] || '📍'} {incident.type} Incident</strong>
-            <p>ID: #{incidentId}</p>
-            <p>Description: {incident.description}</p>
-            <p>Severity: {incident.severity || 'N/A'}</p>
-            <p>Status: {incident.status || 'Reported'}</p>
-          </div>
-        </Popup>
-      </Marker>
-    );
-  });
-}
-
-// Location selection marker component
-function LocationSelectMarker({ onLocationSelect, selectedLocation }) {
-  useMapEvents({
-    click(e) {
-      onLocationSelect({
-        latitude: e.latlng.lat,
-        longitude: e.latlng.lng,
-      });
-    },
-  });
-
-  return selectedLocation ? (
-    <Marker
-      position={[selectedLocation.latitude, selectedLocation.longitude]}
-      icon={
-        new L.Icon({
-          iconUrl: 'data:image/svg+xml;utf8,<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="20" fill="%23ED3030" opacity="0.3"/><circle cx="25" cy="25" r="8" fill="%23ED3030"/></svg>',
-          iconSize: [50, 50],
-          iconAnchor: [25, 25],
-        })
-      }
-    >
-      <Popup>Selected Location for New Unit</Popup>
-    </Marker>
-  ) : null;
-}
-
-// Main Vehicle Management component
 function VehicleManagement() {
   const [vehicles, setVehicles] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -212,112 +26,41 @@ function VehicleManagement() {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [updateLocation, setUpdateLocation] = useState(null);
   const [updatingLocation, setUpdatingLocation] = useState(false);
+
   // Get auth user (may be null)
   const { user } = useContext(AuthContext);
 
   // Fetch all vehicles and incidents from database on component mount
   useEffect(() => {
-    // Fetch data; include auth header when available
-    fetchVehicles();
-    fetchIncidents();
-    fetchAssignments();
-    // Re-run when user changes (e.g., after login)
-  }, [user]);
+    loadData();
+  },);
 
-  const fetchVehicles = async () => {
+  const loadData = async () => {
     try {
       setError('');
-      const headers = {};
-      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
-      const response = await fetch(`${VEHICLE_API_BASE_URL}/all`, { headers });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch vehicles: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fetched vehicles:', data);
-      console.log('Vehicle count:', data ? data.length : 0);
-      
-      // Log first vehicle structure for debugging
-      if (data && data.length > 0) {
-        console.log('First vehicle structure:', JSON.stringify(data[0], null, 2));
-      }
-      
-      setVehicles(data || []);
-    } catch (err) {
-      setError(`Error loading vehicles: ${err.message}`);
-      console.error('Fetch vehicles error:', err);
+      const token = user && user.token ? user.token : null;
+
+      const [vehiclesData, incidentsData, assignmentsData] = await Promise.all([
+        fetchVehicles(token).catch(err => {
+          setError(`Error loading vehicles: ${err.message}`);
+          console.error('Fetch vehicles error:', err);
+          return [];
+        }),
+        fetchIncidents(token).catch(err => {
+          console.error('Fetch incidents error:', err);
+          return [];
+        }),
+        fetchAssignments(token).catch(err => {
+          console.error('Fetch assignments error:', err);
+          return [];
+        })
+      ]);
+
+      setVehicles(vehiclesData);
+      setIncidents(incidentsData);
+      setAssignments(assignmentsData);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchIncidents = async () => {
-    try {
-      const headers = {};
-      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
-      const response = await fetch(INCIDENT_API_BASE_URL, { headers });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch incidents: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fetched incidents:', data);
-      console.log('Incident count:', data ? data.length : 0);
-      
-      // Log first incident structure for debugging
-      if (data && data.length > 0) {
-        console.log('First incident structure:', JSON.stringify(data[0], null, 2));
-      }
-      
-      setIncidents(data || []);
-    } catch (err) {
-      console.error('Fetch incidents error:', err);
-      // Don't set global error, incidents are optional
-    }
-  };
-
-  const fetchAssignments = async () => {
-    try {
-      const headers = {};
-      if (user && user.token) headers['Authorization'] = `Bearer ${user.token}`;
-      const response = await fetch(`${ASSIGNMENT_API_BASE_URL}/all`, { headers });
-
-      if (!response.ok) {
-        // Try to parse error body for message
-        let errText = `HTTP ${response.status}`;
-        try {
-          const ct = response.headers.get('content-type') || '';
-          if (ct.includes('application/json')) {
-            const errBody = await response.json();
-            errText = errBody.message || JSON.stringify(errBody);
-          } else {
-            const txt = await response.text();
-            errText = txt.substring(0, 400);
-          }
-        } catch (e) {
-          console.error('Error parsing assignments error body', e);
-        }
-        throw new Error(`Failed to fetch assignments: ${errText}`);
-      }
-
-      // Ensure we only parse JSON when server sends JSON
-      const contentType = response.headers.get('content-type') || '';
-      let data = null;
-      if (contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        console.warn('Expected JSON for assignments but received:', text.slice(0, 200));
-        throw new Error('Assignments endpoint returned non-JSON (likely an HTML error or redirect)');
-      }
-
-      console.log('Fetched assignments:', data);
-      setAssignments(data || []);
-    } catch (err) {
-      console.error('Fetch assignments error:', err);
+      // setLoading(false);
     }
   };
 
@@ -333,24 +76,9 @@ function VehicleManagement() {
     });
   };
 
-  const unsolvedIncidents = incidents.filter((inc) => !isIncidentSolved(inc));
+  // const unsolvedIncidents = incidents.filter((inc) => !isIncidentSolved(inc));
   const solvedIncidents = incidents.filter((inc) => isIncidentSolved(inc));
 
-  // Get ACTIVE incidents matching the vehicle type for modal display
-  // Filter by: same type, active status, and not yet assigned
-  const getIncidentsForVehicle = (vehicle) => {
-    if (!vehicle) return [];
-    
-    return unsolvedIncidents.filter((inc) => {
-      // Match vehicle type
-      if (inc.type !== vehicle.type) return false;
-      
-      // Only show incidents with REPORTED or ASSIGNED status
-      if (inc.status !== 'REPORTED' && inc.status !== 'ASSIGNED') return false;
-      
-      return true;
-    });
-  };
 
   const handleLocationSelect = (location) => {
     setSelectedLocation(location);
@@ -388,49 +116,8 @@ function VehicleManagement() {
         latitude: selectedLocation.latitude,
       };
 
-      console.log('Sending payload:', JSON.stringify(payload, null, 2));
-
-      const response = await fetch(VEHICLE_API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      const contentType = response.headers.get('content-type');
-      console.log('Content-Type:', contentType);
-
-      if (!response.ok) {
-        // Try to parse as JSON, fallback to text if not valid JSON
-        let errorMessage = `HTTP ${response.status}`;
-        
-        try {
-          if (contentType && contentType.includes('application/json')) {
-            const errorData = await response.json();
-            errorMessage = errorData.message || JSON.stringify(errorData);
-          } else {
-            const errorText = await response.text();
-            errorMessage = errorText.substring(0, 200); // Limit length
-          }
-        } catch (parseErr) {
-          console.error('Error parsing response:', parseErr);
-        }
-
-        throw new Error(`Failed to create vehicle: ${errorMessage}`);
-      }
-
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-
-      if (!responseText) {
-        throw new Error('Empty response from server');
-      }
-
-      const newVehicle = JSON.parse(responseText);
+      const token = user && user.token ? user.token : null;
+      const newVehicle = await createVehicle(payload, token);
       setVehicles((prev) => [...prev, newVehicle]);
 
       // Reset form
@@ -457,10 +144,6 @@ function VehicleManagement() {
     setUpdateLocation(null);
   };
 
-  // const handleUpdateLocationSelect = (location) => {
-  //   setUpdateLocation(location);
-  // };
-
   const handleCancelUpdate = () => {
     setEditingVehicle(null);
     setUpdateLocation(null);
@@ -476,15 +159,16 @@ function VehicleManagement() {
     setUpdatingLocation(true);
     setError('');
 
-    try {
-      const url = `${VEHICLE_API_BASE_URL}/${editingVehicle.id}/location?latitude=${updateLocation.latitude}&longitude=${updateLocation.longitude}`;
-      const response = await fetch(url, {
-        method: 'PUT',
-      });
+    const token = user && user.token ? user.token : null;
 
-      if (!response.ok) {
-        throw new Error(`Failed to update location: ${response.statusText}`);
-      }
+    try {
+      // Pass user.token to the updateVehicleLocation function
+      await updateVehicleLocation(
+        editingVehicle.id,
+        updateLocation.latitude,
+        updateLocation.longitude,
+        token
+      );
 
       // Update vehicle in state
       setVehicles((prev) =>
@@ -507,33 +191,11 @@ function VehicleManagement() {
   return (
     <div className="vehicle-management">
       {/* Left Side - Map */}
-      <div className="map-section">
-        
-        {loading ? (
-          <div className="loading-spinner">Loading vehicles...</div>
-        ) : (
-          <MapContainer
-            center={[26.8206, 30.8025]}
-            zoom={6}
-            scrollWheelZoom={true}
-            className="management-map"
-            key="map-container"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {vehicles && vehicles.length > 0 && <VehicleMarkers vehicles={vehicles} />}
-            {unsolvedIncidents && unsolvedIncidents.length > 0 && (
-              <IncidentMarkers incidents={unsolvedIncidents} />
-            )}
-            <LocationSelectMarker
-              onLocationSelect={handleLocationSelect}
-              selectedLocation={selectedLocation}
-            />
-          </MapContainer>
-        )}
-      </div>
+      <LiveMap
+        setLocation={true}
+        selectedLocation={selectedLocation}
+        onLocationSelect={handleLocationSelect}
+      />
 
       {/* Right Side - Form */}
       <div className="form-section">
@@ -598,7 +260,6 @@ function VehicleManagement() {
                     key={vehicle.id}
                     className="vehicle-item"
                     onClick={() => handleEditVehicleLocation(vehicle)}
-                    style={{ cursor: 'pointer' }}
                   >
                     <div className="vehicle-icon" data-type={vehicle.type.toLowerCase()}>
                       {vehicle.type === 'MEDICAL' && '🚑'}
@@ -623,6 +284,7 @@ function VehicleManagement() {
               </div>
             </div>
           )}
+
           {/* Assignments Section */}
           <div className="assignments-section">
             <h3>Assignments {assignments && assignments.length > 0 ? `(${assignments.length})` : '(0)'}</h3>
@@ -653,8 +315,9 @@ function VehicleManagement() {
               )}
             </div>
           </div>
+
           {/* Solved Incidents Section */}
-          <div className="vehicles-list solved-incidents">
+          <div className="vehicles-list">
             <h3>Solved Incidents {solvedIncidents && solvedIncidents.length > 0 ? `(${solvedIncidents.length})` : '(0)'}</h3>
             <div className="list-content">
               {solvedIncidents && solvedIncidents.length > 0 ? (
@@ -697,20 +360,11 @@ function VehicleManagement() {
             <div className="modal-body">
               <div style={{ flexShrink: 0 }}>
                 <p className="modal-instruction">Enter new coordinates for this unit</p>
-                {getIncidentsForVehicle(editingVehicle).length > 0 ? (
-                  <p className="modal-instruction" style={{ fontSize: '13px', color: '#888' }}>
-                    Showing {getIncidentsForVehicle(editingVehicle).length} active {editingVehicle.type} incident{getIncidentsForVehicle(editingVehicle).length !== 1 ? 's' : ''} available for dispatch
-                  </p>
-                ) : (
-                  <p className="modal-instruction" style={{ fontSize: '13px', color: '#999', fontStyle: 'italic' }}>
-                    No active incidents of type {editingVehicle.type} at this time
-                  </p>
-                )}
               </div>
 
-              <div style={{ flexShrink: 0, display: 'flex', gap: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', color: '#333', fontWeight: '600', fontSize: '13px' }}>Latitude *</label>
+              <div className="modal-inputs-row">
+                <div className="modal-input-group">
+                  <label className="modal-label">Latitude *</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -725,18 +379,11 @@ function VehicleManagement() {
                         });
                       }
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #d0d0d0',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      boxSizing: 'border-box',
-                    }}
+                    className="modal-input"
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', color: '#333', fontWeight: '600', fontSize: '13px' }}>Longitude *</label>
+                <div className="modal-input-group">
+                  <label className="modal-label">Longitude *</label>
                   <input
                     type="number"
                     step="0.0001"
@@ -751,14 +398,7 @@ function VehicleManagement() {
                         });
                       }
                     }}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #d0d0d0',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      boxSizing: 'border-box',
-                    }}
+                    className="modal-input"
                   />
                 </div>
               </div>
