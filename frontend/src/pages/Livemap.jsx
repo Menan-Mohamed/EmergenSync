@@ -7,6 +7,7 @@ import {
   fetchVehicles,
   fetchIncidents,
 } from '../services/Service';
+import useVehicleSocket from '../services/VehicleSocket'; 
 
 // Fix for default marker icon in leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -203,7 +204,7 @@ function LiveMap({
   selectedLocation = null,
   onLocationSelect = () => { }
 }) {
-  const [vehicles, setVehicles] = useState([]);
+  const vehicles = useVehicleSocket();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -223,7 +224,7 @@ function LiveMap({
           fetchIncidents(user.token)
         ]);
 
-        setVehicles(vehiclesData);
+        // setVehicles(vehiclesData);
         setIncidents(incidentsData);
       } catch (err) {
         console.error(err);
