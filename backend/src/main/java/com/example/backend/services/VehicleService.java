@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,10 @@ public class VehicleService {
     @Autowired
     private VehicleMapper vehicleMapper;
 
+    @Autowired
+    private WebSocketPublisherService webSocketPublisherService;
+
+    @Transactional
     public boolean updateVehicleLocation(Integer vehicleId, Double latitude, Double longitude){
         Optional<Vehicle> findVehicle = vehicleRepository.findById(vehicleId);
 
@@ -48,21 +53,13 @@ public class VehicleService {
 
         Vehicle vehicle = findVehicle.get();
 
-        VehicleLocationHistoryID id = new VehicleLocationHistoryID(vehicleId, LocalDateTime.now());
-        
-        VehicleLocationHistory locationHistory = VehicleLocationHistory.builder()
-                .id(id)
-                .vehicle(vehicle)
-                .latitude(latitude)
-                .longitude(longitude)
-                .build();
-        
-        vehicleLHRepo.save(locationHistory);
-
         vehicle.setLastUpdate(LocalDateTime.now());
         vehicle.setLatitude(latitude);
         vehicle.setLongitude(longitude);
         vehicleRepository.save(vehicle);
+
+        VehicleDto update = vehicleMapper.toDto(vehicle);
+        webSocketPublisherService.sendVehicleLocation(update);
 
         assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
         
@@ -147,11 +144,11 @@ public class VehicleService {
     }
 
     public List<VehicleDto> getAllVehicles (){
-        List<Vehicle> vechicles = vehicleRepository.findAll();
-        List<VehicleDto> vechicleDtos = new ArrayList<>();
-        for(Vehicle i : vechicles){
-            vechicleDtos.add(vehicleMapper.toDto(i));
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<VehicleDto> vehicleDtos = new ArrayList<>();
+        for(Vehicle i : vehicles){
+            vehicleDtos.add(vehicleMapper.toDto(i));
         }
-        return vechicleDtos;
+        return vehicleDtos;
     }
 }

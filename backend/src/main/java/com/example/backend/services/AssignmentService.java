@@ -1,6 +1,7 @@
 package com.example.backend.services;
 
 import com.example.backend.dtos.AssignmentDto;
+import com.example.backend.dtos.CachedRoute;
 import com.example.backend.dtos.Point;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
@@ -18,6 +19,7 @@ import com.example.backend.utils.HaversineFormula;
 import com.example.backend.utils.OsrmRouting;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -45,6 +47,10 @@ public class AssignmentService {
 
     @Autowired
     private OsrmRouting routingFind;
+
+    @Autowired
+    private RedisTemplate<String, CachedRoute> redisTemplate;
+
 
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -94,12 +100,20 @@ public class AssignmentService {
         assignmentRepository.save(assignment);
 
         List<Point> route = routingFind.getBestRoutePoints(vehicle.getLongitude(), vehicle.getLatitude(), incident.getLongitude(), incident.getLatitude());
+        route.add(new Point(incident.getLongitude(), incident.getLatitude()));
         for(int i=0 ; i< route.size() ; i++){
             System.out.println(i);
             System.out.println(route.get(i).getLongitude() + "  " + route.get(i).getLatitude());
         }
+
+
+        CachedRoute cachedRoute = new CachedRoute(0, route);
+
+        String redisKey = "route:" + vehicle.getId();
+        redisTemplate.opsForValue().set(redisKey, cachedRoute);
     }
 
+    @Transactional
     public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
 
         Assignment assignment = assignmentRepository.findActiveAssignmentByVehicle(vehicleId);
@@ -120,6 +134,9 @@ public class AssignmentService {
         Vehicle vehicle = assignment.getVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicleRepository.save(vehicle);
+
+        String redisKey = "route:" + vehicleId;
+        redisTemplate.delete(redisKey);
 
         // Check waiting Incidents
         assignWaitingIncidents(vehicle);
