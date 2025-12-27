@@ -30,8 +30,17 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
         // Allow OPTIONS requests for CORS preflight
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String path = request.getRequestURI();
+
+        // Skip JWT validation for Python simulation endpoint
+        if (path.startsWith("/api/responder/vehicle/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,7 +57,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 claims = jwtService.parseClaims(token);
             } catch (Exception e) {
                 // Invalid token format, continue without authentication
-                // Spring Security will handle unauthorized requests
             }
         }
 
@@ -65,9 +73,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             } catch (Exception e) {
                 // Token validation failed, continue without authentication
-                // Spring Security will handle unauthorized requests
             }
         }
+
         filterChain.doFilter(request, response);
     }
+
 }

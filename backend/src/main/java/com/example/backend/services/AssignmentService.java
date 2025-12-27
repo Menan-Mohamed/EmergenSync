@@ -20,11 +20,17 @@ import com.example.backend.utils.OsrmRouting;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -99,18 +105,26 @@ public class AssignmentService {
 
         assignmentRepository.save(assignment);
 
-        List<Point> route = routingFind.getBestRoutePoints(vehicle.getLongitude(), vehicle.getLatitude(), incident.getLongitude(), incident.getLatitude());
-        route.add(new Point(incident.getLongitude(), incident.getLatitude()));
-        for(int i=0 ; i< route.size() ; i++){
-            System.out.println(i);
-            System.out.println(route.get(i).getLongitude() + "  " + route.get(i).getLatitude());
+        String pythonUrl = "http://localhost:8000/simulate";
+        RestTemplate restTemplate = new RestTemplate();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("vehicleId", vehicle.getId());
+        body.put("startLat", vehicle.getLatitude());
+        body.put("startLon", vehicle.getLongitude());
+        body.put("endLat", incident.getLatitude());
+        body.put("endLon", incident.getLongitude());
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        try {
+            restTemplate.postForObject(pythonUrl, request, String.class);
+        } catch(Exception e){
+            e.printStackTrace();
         }
-
-
-        CachedRoute cachedRoute = new CachedRoute(0, route);
-
-        String redisKey = "route:" + vehicle.getId();
-        redisTemplate.opsForValue().set(redisKey, cachedRoute);
     }
 
     @Transactional
