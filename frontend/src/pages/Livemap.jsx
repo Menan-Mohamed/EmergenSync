@@ -3,10 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaf
 import L from 'leaflet';
 import './Livemap.css';
 import { AuthContext } from '../auth/AuthContext';
-import {
-  fetchVehicles,
-  fetchIncidents,
-} from '../services/Service';
+import { fetchIncidents } from '../services/Service';
 import useVehicleSocket from '../services/VehicleSocket'; 
 
 // Fix for default marker icon in leaflet
@@ -204,6 +201,7 @@ function LiveMap({
   selectedLocation = null,
   onLocationSelect = () => { }
 }) {
+  // Vehicles come from the WebSocket hook (which also fetches initially)
   const vehicles = useVehicleSocket();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -219,12 +217,8 @@ function LiveMap({
         setLoading(true);
         setError('');
 
-        const [vehiclesData, incidentsData] = await Promise.all([
-          fetchVehicles(user.token),
-          fetchIncidents(user.token)
-        ]);
-
-        // setVehicles(vehiclesData);
+        // Only fetch incidents - vehicles are handled by useVehicleSocket
+        const incidentsData = await fetchIncidents(user.token);
         setIncidents(incidentsData);
       } catch (err) {
         console.error(err);
@@ -240,8 +234,8 @@ function LiveMap({
 
   return (
     <div className="map-section">
-      {loading && fetchVehicles && fetchIncidents ? (
-        <div className="loading-spinner">Loading vehicles...</div>
+      {loading ? (
+        <div className="loading-spinner">Loading map data...</div>
       ) : (
         <MapContainer
           center={[26.8206, 30.8025]}
