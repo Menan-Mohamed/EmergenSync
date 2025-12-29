@@ -1,11 +1,13 @@
 package com.example.backend.repositories;
 
 import com.example.backend.entities.Incident;
+import com.example.backend.enums.IncidentStatus;
 import com.example.backend.enums.IncidentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface IncidentRepository extends JpaRepository<Incident, Integer> {
@@ -19,4 +21,9 @@ public interface IncidentRepository extends JpaRepository<Incident, Integer> {
         """,
             nativeQuery = true)
     Incident findMostSevereReportedByType(@Param("type") String type);
+
+    List<Incident> findByStatusAndReportedAtBefore(
+        @Param("status") IncidentStatus status, 
+        @Param("reportedBefore") LocalDateTime reportedBefore
+    ); 
 }

@@ -16,6 +16,12 @@ public class Notification {
     @Column(name= "type", length = 50)
     private String type;
 
+    @Column(name="category")
+    private String category;
+
+    @Column(name="is_read")
+    private Boolean read;
+
     @Column(name = "sent_at", nullable = false)
     private LocalDateTime sentAt;
 

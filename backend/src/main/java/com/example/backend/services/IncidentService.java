@@ -3,14 +3,11 @@ package com.example.backend.services;
 
 import com.example.backend.dtos.IncidentDTO;
 import com.example.backend.entities.Incident;
-import com.example.backend.entities.Vehicle;
 import com.example.backend.enums.IncidentStatus;
-import com.example.backend.enums.IncidentType;
 import com.example.backend.mapper.IncidentMapper;
 import com.example.backend.repositories.IncidentRepository;
 import static com.example.backend.enums.IncidentStatus.REPORTED;
 
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +24,9 @@ public class IncidentService {
    @Autowired
    private DispatchService dispatchService;
 
+   @Autowired
+    private NotificationsService notificationsService;
+
    public Incident createIncident(IncidentDTO incidentdto){
 
        IncidentMapper incidentMapper = new IncidentMapper();
@@ -36,6 +36,11 @@ public class IncidentService {
        Incident savedIncident = incidentRepository.save(incident);
 
        dispatchService.autoAssign(savedIncident);
+
+       notificationsService.sendSystemAlert(
+            "New incident reported: " + savedIncident.getId(),
+            "INCIDENT"
+        );
 
        return savedIncident;
    }
@@ -62,6 +67,11 @@ public class IncidentService {
         }
 
         incident.setStatus(newStatus);
+
+        if (newStatus != IncidentStatus.REPORTED) {
+            incident.setNotificationSent(true);
+        }
+        
         return incidentRepository.save(incident);
     }
 }

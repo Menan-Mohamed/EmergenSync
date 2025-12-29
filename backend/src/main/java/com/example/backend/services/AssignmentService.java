@@ -51,6 +51,8 @@ public class AssignmentService {
     @Autowired
     private RedisTemplate<String, CachedRoute> redisTemplate;
 
+    @Autowired
+    private NotificationsService notificationsService;
 
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -140,6 +142,11 @@ public class AssignmentService {
 
         // Check waiting Incidents
         assignWaitingIncidents(vehicle);
+
+        notificationsService.sendSystemAlert(
+            "Incident updated: " + incident.getId(),
+            "INCIDENT"
+        );
 
     }
 
