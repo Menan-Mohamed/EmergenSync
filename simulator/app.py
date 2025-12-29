@@ -13,9 +13,9 @@ redis_client = redis.Redis(
     decode_responses=True
 )
 
-OSRM_URL = "http://router.project-osrm.org/route/v1/driving"
-SPRING_URL = SPRING_URL = "http://localhost:8080/api/responder/vehicle"
-  # Spring Boot endpoint
+OSRM_URL = "https://router.project-osrm.org/route/v1/driving"
+SPRING_URL = "http://localhost:8080/api/responder/vehicle"
+
 
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
