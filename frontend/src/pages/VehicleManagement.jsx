@@ -52,7 +52,7 @@ function VehicleManagement() {
     };
 
     loadData();
-  }, [user?.token, incidents]);
+  }, [user?.token, incidents, vehicles]);
 
 
   // Helper to determine if an incident is solved based on assignments

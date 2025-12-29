@@ -29,11 +29,13 @@ public class WebSocketPublisherService {
         dto.setMsg(notification.getMsg());
         dto.setSentAt(notification.getSentAt());
         dto.setRead(notification.getRead());
-        
+
         messagingTemplate.convertAndSend(
-            "/topic/admin-notifications/" + adminId,
-            dto
+                "/topic/admin-notifications/" + adminId,
+                dto
         );
+    }
+
     public void sendIncidentUpdate(Incident update) {
         messagingTemplate.convertAndSend("/topic/incidents", update);
     }

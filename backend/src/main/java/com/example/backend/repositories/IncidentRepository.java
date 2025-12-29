@@ -33,8 +33,8 @@ public interface IncidentRepository extends JpaRepository<Incident, Integer> {
     List<Incident> findByStatusAndReportedAtBefore(
         @Param("status") IncidentStatus status, 
         @Param("reportedBefore") LocalDateTime reportedBefore
-    ); 
-}
+    );
+
     // NEW: Find by ID with lock to prevent concurrent assignment
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Incident i WHERE i.id = :id")
