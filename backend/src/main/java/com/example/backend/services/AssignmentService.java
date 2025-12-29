@@ -62,9 +62,6 @@ public class AssignmentService {
     @Autowired
     private NotificationsService notificationsService;
 
-    @Autowired
-    private NotificationsService notificationsService;
-
     @Transactional
     public synchronized void assignVehicle(Vehicle vehicle, Incident incident) {
         logger.info("Thread {} - Attempting to assign vehicle {} to incident {}",
@@ -182,8 +179,6 @@ public class AssignmentService {
         socketPublisherService.sendIncidentUpdate(incident);
         socketPublisherService.sendVehicleLocation(vehicleMapper.toDto(vehicle));
 
-        // Check waiting Incidents
-        assignWaitingIncidents(vehicle);
 
         notificationsService.sendSystemAlert(
             "Incident updated: " + incident.getId(),
