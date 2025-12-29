@@ -1,90 +1,53 @@
 package com.example.backend.services;
 
-import java.util.Comparator;
-import java.util.List;
-
-import com.example.backend.enums.IncidentType;
-import com.example.backend.enums.VehicleType;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.example.backend.repositories.VehicleLocationHistoryRepository;
-import com.example.backend.repositories.VehicleRepository;
-import com.example.backend.utils.HaversineFormula;
-import com.example.backend.dtos.VehicleDispatchDto;
 import com.example.backend.entities.Incident;
 import com.example.backend.entities.Vehicle;
-import com.example.backend.entities.VehicleLocationHistory;
-import com.example.backend.mapper.VehicleMapper;
-
+import com.example.backend.enums.IncidentType;
+import com.example.backend.enums.VehicleType;
+import com.example.backend.repositories.VehicleRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class DispatchService {
 
     @Autowired
-    private VehicleRepository vehicleRepo;
-
-    @Autowired
-    private VehicleLocationHistoryRepository vehicleLHRepo;
-
-    @Autowired
-    private HaversineFormula haversineFormula;
+    private VehicleRepository vehicleRepository;
 
     @Autowired
     private AssignmentService assignmentService;
 
-    @Autowired
-    private VehicleMapper vehicleMapper;
+    /**
+     * Concurrency-safe auto assignment.
+     */
+    @Transactional
+    public void autoAssign(Incident incident) {
 
-    public void autoAssign(Incident incident){
+        VehicleType type = mapIncidentTypeToVehicleType(incident.getType());
 
-        VehicleType vehicleType = mapIncidentTypeToVehicleType(incident.getType());
+        Integer vehicleId = vehicleRepository.findNearestAvailableForUpdate(
+                type.name(),
+                incident.getLatitude(),
+                incident.getLongitude()
+        );
 
-        List<Vehicle> available = vehicleRepo.findAvailableByType(vehicleType);
+        if (vehicleId == null) return;
 
-        if (available == null || available.isEmpty()) {
-            return;
-        }
+        int claimed = vehicleRepository.claimById(vehicleId);
+        if (claimed == 0) return;
 
-        VehicleDispatchDto nearestVehicleDto = findNearestVehicle(available, incident);
+        Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+        if (vehicle == null) return;
 
-        if(nearestVehicleDto == null) return;
-
-        Vehicle nearest = vehicleRepo.findById(nearestVehicleDto.getId()).orElse(null);
-
-        if(nearest == null) return;
-
-        assignmentService.assignVehicle(nearest, incident);
+        assignmentService.assignVehicle(vehicle, incident);
     }
-
-    public VehicleDispatchDto findNearestVehicle(List<Vehicle> vehicles, Incident incident) {
-
-        return vehicles.stream()
-                .filter(vehicle -> vehicle.getLatitude() != null && vehicle.getLongitude() != null)
-                .map(vehicle -> {
-                    double distance = haversineFormula.haversine(
-                            vehicle.getLatitude(),
-                            vehicle.getLongitude(),
-                            incident.getLatitude(),
-                            incident.getLongitude()
-                    );
-
-                    return vehicleMapper.toDispatchDto(vehicle, distance);
-                })
-                .min(Comparator.comparing(VehicleDispatchDto::getDistanceToIncident))
-                .orElse(null);
-    }
-
 
     private VehicleType mapIncidentTypeToVehicleType(IncidentType incidentType) {
-        switch (incidentType) {
-            case FIRE:
-                return VehicleType.FIRE;
-            case POLICE:
-                return VehicleType.POLICE;
-            default:
-                return VehicleType.MEDICAL;
-        }
+        return switch (incidentType) {
+            case FIRE -> VehicleType.FIRE;
+            case POLICE -> VehicleType.POLICE;
+            default -> VehicleType.MEDICAL;
+        };
     }
-
 }

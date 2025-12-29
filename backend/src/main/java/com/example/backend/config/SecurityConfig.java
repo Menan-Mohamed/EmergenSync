@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/dispatcher/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers("/api/responder/**").hasRole("SYSTEM_ADMIN")
+//                        .requestMatchers("/api/responder/**").permitAll()  // Temporarily allow all FOR TESTING ONLY
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()// All other endpoints require authentication
                 )
