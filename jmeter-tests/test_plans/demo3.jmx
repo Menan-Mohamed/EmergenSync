@@ -22,7 +22,7 @@
         </elementProp>
       </SetupThreadGroup>
       <hashTree>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config">
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
           <stringProp name="delimiter">,</stringProp>
           <stringProp name="fileEncoding"></stringProp>
           <stringProp name="filename">/home/lojinesameh850/CollegeMaterial/Year3/DatabaseSystems/ppjj/EmergenSync/jmeter-tests/test_data/demo3_vehicles.csv</stringProp>
@@ -38,7 +38,7 @@
           <stringProp name="LoopController.loops">75</stringProp>
         </LoopController>
         <hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Create Vehicle">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Create Vehicle" enabled="true">
             <stringProp name="HTTPSampler.domain">localhost</stringProp>
             <stringProp name="HTTPSampler.port">8080</stringProp>
             <stringProp name="HTTPSampler.protocol">http</stringProp>
@@ -84,9 +84,9 @@ vars.put(&quot;vehicleType&quot;, types[new Random().nextInt(types.size())])</st
           </hashTree>
         </hashTree>
       </hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Concurrent Incident Creation (Triggers Auto-Assign)" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Concurrent Incident Creation (Triggers Auto-Assign)">
         <stringProp name="TestPlan.comments">Incidents created simultaneously to test race conditions.</stringProp>
-        <intProp name="ThreadGroup.num_threads">500</intProp>
+        <intProp name="ThreadGroup.num_threads">100</intProp>
         <intProp name="ThreadGroup.ramp_time">1</intProp>
         <longProp name="ThreadGroup.duration">10</longProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
