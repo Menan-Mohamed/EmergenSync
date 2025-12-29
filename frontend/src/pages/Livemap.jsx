@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import './Livemap.css';
-import { AuthContext } from '../auth/AuthContext';
-import { fetchIncidents } from '../services/Service';
-import useVehicleSocket from '../services/VehicleSocket'; 
+import useVehicleSocket from '../services/VehicleSocket';
+import useIncidentSocket from '../services/IncidentSocket';
 
 // Fix for default marker icon in leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -201,65 +200,35 @@ function LiveMap({
   selectedLocation = null,
   onLocationSelect = () => { }
 }) {
-  // Vehicles come from the WebSocket hook (which also fetches initially)
+
+
   const vehicles = useVehicleSocket();
-  const [incidents, setIncidents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const { user } = useContext(AuthContext);
-
-  useEffect(() => {
-    if (!user?.token) return;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        // Only fetch incidents - vehicles are handled by useVehicleSocket
-        const incidentsData = await fetchIncidents(user.token);
-        setIncidents(incidentsData);
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user?.token]);
+  const incidents = useIncidentSocket();
 
 
   return (
     <div className="map-section">
-      {loading ? (
-        <div className="loading-spinner">Loading map data...</div>
-      ) : (
-        <MapContainer
-          center={[26.8206, 30.8025]}
-          zoom={6}
-          scrollWheelZoom={true}
-          className="management-map"
-          key="map-container"
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {vehicles && vehicles.length > 0 && <VehicleMarkers vehicles={vehicles} />}
-          {incidents && incidents.length > 0 && (
-            <IncidentMarkers incidents={incidents} />
-          )}
-          <LocationSelectMarker
-            onLocationSelect={onLocationSelect}
-            selectedLocation={selectedLocation}
-            setLocation={setLocation}
-          />
-        </MapContainer>
-      )}
-      {error && <div className="map-error">Error: {error}</div>}
+      <MapContainer
+        center={[26.8206, 30.8025]}
+        zoom={6}
+        scrollWheelZoom={true}
+        className="management-map"
+        key="map-container"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {vehicles && vehicles.length > 0 && <VehicleMarkers vehicles={vehicles} />}
+        {incidents && incidents.length > 0 && (
+          <IncidentMarkers incidents={incidents} />
+        )}
+        <LocationSelectMarker
+          onLocationSelect={onLocationSelect}
+          selectedLocation={selectedLocation}
+          setLocation={setLocation}
+        />
+      </MapContainer>
     </div>
   );
 }

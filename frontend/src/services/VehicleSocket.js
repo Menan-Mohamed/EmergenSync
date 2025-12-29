@@ -13,7 +13,6 @@ export default function useVehicleSocket() {
     // STEP 1: Fetch all existing vehicles from REST API
     const loadInitialVehicles = async () => {
       try {
-        console.log('📡 Fetching all vehicles from API...');
         const response = await fetch('http://localhost:8080/api/responder/vehicle/all', {
           headers: {
             'Authorization': `Bearer ${user.token}`,
@@ -26,10 +25,10 @@ export default function useVehicleSocket() {
         }
         
         const vehiclesData = await response.json();
-        console.log('✅ Loaded', vehiclesData.length, 'vehicles from API');
+        console.log('Loaded', vehiclesData.length, 'vehicles from API');
         setVehicles(vehiclesData);
       } catch (err) {
-        console.error('❌ Failed to fetch vehicles:', err);
+        console.error('Failed to fetch vehicles:', err);
       }
     };
 
@@ -45,11 +44,11 @@ export default function useVehicleSocket() {
     });
 
     client.onConnect = () => {
-      console.log('🔌 Connected to WebSocket');
+      console.log('Connected to WebSocket');
       
       client.subscribe('/topic/vehicles', (message) => {
         const data = JSON.parse(message.body);
-        console.log('🚗 Vehicle update via WebSocket:', data.id);
+        console.log('Vehicle update via WebSocket:', data.id);
         
         setVehicles((prev) => {
           const index = prev.findIndex(v => v.id === data.id);
@@ -57,11 +56,11 @@ export default function useVehicleSocket() {
             // Update existing vehicle location
             const updated = [...prev];
             updated[index] = data;
-            console.log('📝 Updated vehicle location:', data.id);
+            console.log('Updated vehicle location:', data.id);
             return updated;
           } else {
             // Add new vehicle if it doesn't exist
-            console.log('➕ Added new vehicle:', data.id);
+            console.log('Added new vehicle:', data.id);
             return [...prev, data];
           }
         });
@@ -71,7 +70,7 @@ export default function useVehicleSocket() {
     client.activate();
 
     return () => {
-      console.log('🔌 Disconnecting WebSocket');
+      console.log('Disconnecting WebSocket');
       client.deactivate();
     };
   }, [user?.token]);

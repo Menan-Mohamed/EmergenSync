@@ -2,20 +2,23 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../auth/AuthContext';
 import LiveMap from './Livemap';
 import {
-  fetchVehicles,
-  fetchIncidents,
   fetchAssignments,
   createVehicle,
   updateVehicleLocation
 } from '../services/Service';
 import './VehicleManagement.css';
+import useVehicleSocket from '../services/VehicleSocket';
+import useIncidentSocket from '../services/IncidentSocket';
 
 function VehicleManagement() {
-  const [vehicles, setVehicles] = useState([]);
-  const [incidents, setIncidents] = useState([]);
+
+  const vehicles = useVehicleSocket();
+  const incidents = useIncidentSocket();
+
   const [assignments, setAssignments] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
-  // const [loading, setLoading] = useState(true);
+
+
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,14 +40,10 @@ function VehicleManagement() {
       try {
         setError('');
 
-        const [vehiclesData, incidentsData, assignmentsData] = await Promise.all([
-          fetchVehicles(user.token),
-          fetchIncidents(user.token),
+        const [assignmentsData] = await Promise.all([
           fetchAssignments(user.token),
         ]);
 
-        setVehicles(vehiclesData);
-        setIncidents(incidentsData);
         setAssignments(assignmentsData);
       } catch (err) {
         console.error(err);
@@ -53,19 +52,12 @@ function VehicleManagement() {
     };
 
     loadData();
-  }, [user?.token]);
+  }, [user?.token, incidents]);
 
 
   // Helper to determine if an incident is solved based on assignments
   const isIncidentSolved = (incident) => {
-    if (!incident) return false;
-    const incidentId = incident.id ?? incident.incidentId ?? null;
-    if (incidentId == null) return false;
-    return assignments.some((a) => {
-      if (a == null) return false;
-      // assignment.incidentId may be number or string
-      return String(a.incidentId) === String(incidentId) && a.solvedAt;
-    });
+    return incident.status === 'RESOLVED';
   };
 
   // const unsolvedIncidents = incidents.filter((inc) => !isIncidentSolved(inc));
@@ -110,7 +102,8 @@ function VehicleManagement() {
 
       const token = user && user.token ? user.token : null;
       const newVehicle = await createVehicle(payload, token);
-      setVehicles((prev) => [...prev, newVehicle]);
+
+      console.log('Created new vehicle:', newVehicle);
 
       // Reset form
       setFormData({
@@ -127,8 +120,8 @@ function VehicleManagement() {
     }
   };
 
-  const handleDeleteVehicle = (vehicleId) => {
-    setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+  const handleDeleteVehicle = async (vehicleId) => {
+    console.log('Delete vehicle not implemented yet:', vehicleId);
   };
 
   const handleEditVehicleLocation = (vehicle) => {
@@ -160,15 +153,6 @@ function VehicleManagement() {
         updateLocation.latitude,
         updateLocation.longitude,
         token
-      );
-
-      // Update vehicle in state
-      setVehicles((prev) =>
-        prev.map((v) =>
-          v.id === editingVehicle.id
-            ? { ...v, latitude: updateLocation.latitude, longitude: updateLocation.longitude }
-            : v
-        )
       );
 
       handleCancelUpdate();
