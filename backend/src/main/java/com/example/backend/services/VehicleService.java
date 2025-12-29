@@ -134,6 +134,9 @@ public class VehicleService {
 
             vehicleLHRepo.save(initialLocation);
 
+            VehicleDto update = vehicleMapper.toDto(vehicle);
+            webSocketPublisherService.sendVehicleLocation(update);
+
             // Check waiting Incidents
             assignmentService.assignWaitingIncidents(vehicle);
 
