@@ -152,6 +152,9 @@ public class VehicleService {
 
             vehicleLHRepo.save(initialLocation);
 
+            VehicleDto update = vehicleMapper.toDto(vehicle);
+            webSocketPublisherService.sendVehicleLocation(update);
+
             // FIX: Pass vehicle ID instead of entity
             assignmentService.assignWaitingIncidentsByVehicleIdAsync(savedVehicle.getId());
 
