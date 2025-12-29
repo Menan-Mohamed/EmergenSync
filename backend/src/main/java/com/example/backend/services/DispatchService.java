@@ -7,14 +7,11 @@ import com.example.backend.enums.IncidentType;
 import com.example.backend.enums.VehicleType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import com.example.backend.repositories.VehicleLocationHistoryRepository;
 import com.example.backend.repositories.VehicleRepository;
 import com.example.backend.utils.HaversineFormula;
 import com.example.backend.dtos.VehicleDispatchDto;
 import com.example.backend.entities.Incident;
 import com.example.backend.entities.Vehicle;
-import com.example.backend.entities.VehicleLocationHistory;
 import com.example.backend.mapper.VehicleMapper;
 
 
@@ -23,9 +20,6 @@ public class DispatchService {
 
     @Autowired
     private VehicleRepository vehicleRepo;
-
-    @Autowired
-    private VehicleLocationHistoryRepository vehicleLHRepo;
 
     @Autowired
     private HaversineFormula haversineFormula;

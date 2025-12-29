@@ -1,15 +1,12 @@
 package com.example.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.backend.dtos.NotificationDto;
 import com.example.backend.entities.Notification;
 import com.example.backend.services.NotificationsService;
-import jakarta.validation.Valid;
 import java.util.List;
 
 
