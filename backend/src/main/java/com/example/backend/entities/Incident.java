@@ -41,4 +41,7 @@ public class Incident {
     @Column(name="reportedAt", nullable = false)
     private LocalDateTime reportedAt;
 
+    @Column(name="notification_sent", nullable = false)
+    private Boolean notificationSent = false;
+
 }

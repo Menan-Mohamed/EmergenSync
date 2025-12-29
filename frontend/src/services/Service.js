@@ -61,3 +61,4 @@ export const updateVehicleLocation = async (vehicleId, latitude, longitude, auth
 
   return true;
 };
+

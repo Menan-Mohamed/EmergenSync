@@ -1,8 +1,6 @@
 package com.example.backend.services;
 
 import com.example.backend.dtos.AssignmentDto;
-import com.example.backend.dtos.CachedRoute;
-import com.example.backend.dtos.Point;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
 import com.example.backend.entities.Incident;
@@ -11,17 +9,16 @@ import com.example.backend.enums.VehicleStatus;
 import com.example.backend.enums.IncidentStatus;
 
 import com.example.backend.mapper.AssignmentMapper;
+import com.example.backend.mapper.VehicleMapper;
 import com.example.backend.repositories.AssignmentRepository;
 import com.example.backend.repositories.IncidentRepository;
 import com.example.backend.repositories.VehicleRepository;
 
 import com.example.backend.utils.HaversineFormula;
-import com.example.backend.utils.OsrmRouting;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -57,10 +54,13 @@ public class AssignmentService {
     private AssignmentMapper assignmentMapper;
 
     @Autowired
-    private OsrmRouting routingFind;
+    private WebSocketPublisherService socketPublisherService;
 
     @Autowired
-    private RedisTemplate<String, CachedRoute> redisTemplate;
+    private VehicleMapper vehicleMapper;
+
+    @Autowired
+    private NotificationsService notificationsService;
 
     @Transactional
     public synchronized void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -170,8 +170,14 @@ public class AssignmentService {
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicleRepository.save(vehicle);
 
-        String redisKey = "route:" + vehicleId;
-        redisTemplate.delete(redisKey);
+
+        notificationsService.sendSystemAlert(
+            "Incident updated: " + incident.getId(),
+            "INCIDENT"
+        );
+        //Publish Updates
+        socketPublisherService.sendIncidentUpdate(incident);
+        socketPublisherService.sendVehicleLocation(vehicleMapper.toDto(vehicle));
 
         // Check waiting Incidents asynchronously - PASS VEHICLE ID, NOT ENTITY
         assignWaitingIncidentsByVehicleIdAsync(vehicleId);

@@ -13,6 +13,9 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 public interface IncidentRepository extends JpaRepository<Incident, Integer> {
 
     // Your original native query - keep as is for non-concurrent use
@@ -26,6 +29,11 @@ public interface IncidentRepository extends JpaRepository<Incident, Integer> {
         """,
             nativeQuery = true)
     Incident findMostSevereReportedByType(@Param("type") String type);
+
+    List<Incident> findByStatusAndReportedAtBefore(
+        @Param("status") IncidentStatus status, 
+        @Param("reportedBefore") LocalDateTime reportedBefore
+    );
 
     // NEW: Find by ID with lock to prevent concurrent assignment
     @Lock(LockModeType.PESSIMISTIC_WRITE)
