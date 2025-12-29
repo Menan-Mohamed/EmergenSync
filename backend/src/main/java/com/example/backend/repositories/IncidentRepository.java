@@ -47,4 +47,6 @@ public interface IncidentRepository extends JpaRepository<Incident, Integer> {
 
     // NEW: Find incidents by status (useful for batch processing)
     List<Incident> findByStatus(IncidentStatus status);
+
+    List<Incident> findAll();
 }
