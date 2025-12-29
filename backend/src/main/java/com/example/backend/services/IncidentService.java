@@ -24,8 +24,11 @@ public class IncidentService {
     @Autowired
     private IncidentRepository incidentRepository;
 
-   @Autowired
-   private DispatchService dispatchService;
+    @Autowired
+    private DispatchService dispatchService;
+
+    @Autowired
+    private WebSocketPublisherService publisherService;
 
    public Incident createIncident(IncidentDTO incidentdto){
 
@@ -36,6 +39,7 @@ public class IncidentService {
        Incident savedIncident = incidentRepository.save(incident);
 
        dispatchService.autoAssign(savedIncident);
+       publisherService.sendIncidentUpdate(savedIncident);
 
        return savedIncident;
    }

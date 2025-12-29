@@ -1,7 +1,6 @@
 package com.example.backend.services;
 
 import com.example.backend.dtos.AssignmentDto;
-import com.example.backend.dtos.VehicleDto;
 import com.example.backend.entities.Assignment;
 import com.example.backend.entities.AssignmentID;
 import com.example.backend.entities.Incident;
@@ -10,6 +9,7 @@ import com.example.backend.enums.VehicleStatus;
 import com.example.backend.enums.IncidentStatus;
 
 import com.example.backend.mapper.AssignmentMapper;
+import com.example.backend.mapper.VehicleMapper;
 import com.example.backend.repositories.AssignmentRepository;
 import com.example.backend.repositories.IncidentRepository;
 import com.example.backend.repositories.VehicleRepository;
@@ -17,11 +17,17 @@ import com.example.backend.repositories.VehicleRepository;
 import com.example.backend.utils.HaversineFormula;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -41,6 +47,13 @@ public class AssignmentService {
 
     @Autowired
     private AssignmentMapper assignmentMapper;
+
+    @Autowired
+    private WebSocketPublisherService socketPublisherService;
+
+    @Autowired
+    private VehicleMapper vehicleMapper;
+
 
     @Transactional
     public void assignVehicle(Vehicle vehicle, Incident incident) {
@@ -89,8 +102,29 @@ public class AssignmentService {
 
         assignmentRepository.save(assignment);
 
+        String pythonUrl = "http://localhost:8000/simulate";
+        RestTemplate restTemplate = new RestTemplate();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("vehicleId", vehicle.getId());
+        body.put("startLat", vehicle.getLatitude());
+        body.put("startLon", vehicle.getLongitude());
+        body.put("endLat", incident.getLatitude());
+        body.put("endLon", incident.getLongitude());
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        try {
+            restTemplate.postForObject(pythonUrl, request, String.class);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
+    @Transactional
     public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
 
         Assignment assignment = assignmentRepository.findActiveAssignmentByVehicle(vehicleId);
@@ -111,6 +145,10 @@ public class AssignmentService {
         Vehicle vehicle = assignment.getVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicleRepository.save(vehicle);
+
+        //Publish Updates
+        socketPublisherService.sendIncidentUpdate(incident);
+        socketPublisherService.sendVehicleLocation(vehicleMapper.toDto(vehicle));
 
         // Check waiting Incidents
         assignWaitingIncidents(vehicle);
