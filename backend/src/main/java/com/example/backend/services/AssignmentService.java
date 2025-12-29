@@ -18,17 +18,28 @@ import com.example.backend.repositories.VehicleRepository;
 import com.example.backend.utils.HaversineFormula;
 import com.example.backend.utils.OsrmRouting;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AssignmentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AssignmentService.class);
 
     @Autowired
     private AssignmentRepository assignmentRepository;
@@ -55,69 +66,94 @@ public class AssignmentService {
     private NotificationsService notificationsService;
 
     @Transactional
-    public void assignVehicle(Vehicle vehicle, Incident incident) {
+    public synchronized void assignVehicle(Vehicle vehicle, Incident incident) {
+        logger.info("Thread {} - Attempting to assign vehicle {} to incident {}",
+                Thread.currentThread().getName(), vehicle.getId(), incident.getId());
 
+        // Re-fetch vehicle with lock to ensure we have the latest state
+        Vehicle lockedVehicle = (Vehicle) vehicleRepository.findByIdWithLock(vehicle.getId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + vehicle.getId()));
 
-        //check if vehicle is actually available
-        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new RuntimeException("Vehicle is not available for assignment. Status: " + vehicle.getStatus());
+        // Re-fetch incident with lock
+        Incident lockedIncident = (Incident) incidentRepository.findByIdWithLock(incident.getId())
+                .orElseThrow(() -> new RuntimeException("Incident not found: " + incident.getId()));
+
+        // Check if vehicle is actually available
+        if (lockedVehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new RuntimeException("Vehicle is not available for assignment. Status: " + lockedVehicle.getStatus());
         }
 
-        //check if incident is in a valid state for assignment
-        if (incident.getStatus() != IncidentStatus.REPORTED) {
-            throw new RuntimeException("Incident cannot be assigned - current status: " + incident.getStatus());
+        // Check if incident is in a valid state for assignment
+        if (lockedIncident.getStatus() != IncidentStatus.REPORTED) {
+            throw new RuntimeException("Incident cannot be assigned - current status: " + lockedIncident.getStatus());
         }
 
-        //check if vehicle already has an active assignment
-        Assignment existingAssignment = assignmentRepository.findActiveAssignmentByVehicle(vehicle.getId());
+        // Check if vehicle already has an active assignment
+        Assignment existingAssignment = assignmentRepository.findActiveAssignmentByVehicle(lockedVehicle.getId());
         if (existingAssignment != null) {
-            throw new RuntimeException("Vehicle already has an active assignment: " + vehicle.getId());
+            throw new RuntimeException("Vehicle already has an active assignment: " + lockedVehicle.getId());
         }
 
-        //verify vehicle type matches incident type
-        if (!isVehicleTypeMatchesIncident(vehicle, incident)) {
+        // Verify vehicle type matches incident type
+        if (!isVehicleTypeMatchesIncident(lockedVehicle, lockedIncident)) {
             throw new RuntimeException(
-                    "Vehicle type mismatch! Cannot assign " + vehicle.getType() +
-                            " vehicle to " + incident.getType() + " incident. Vehicle ID: " +
-                            vehicle.getId() + ", Incident ID: " + incident.getId()
+                    "Vehicle type mismatch! Cannot assign " + lockedVehicle.getType() +
+                            " vehicle to " + lockedIncident.getType() + " incident."
             );
         }
 
-        vehicle.setStatus(VehicleStatus.ON_ROUTE);
-        vehicleRepository.save(vehicle);
+        lockedVehicle.setStatus(VehicleStatus.ON_ROUTE);
+        vehicleRepository.save(lockedVehicle);
 
-        incident.setStatus(IncidentStatus.ASSIGNED);
-        incidentRepository.save(incident);
+        lockedIncident.setStatus(IncidentStatus.ASSIGNED);
+        incidentRepository.save(lockedIncident);
 
         AssignmentID assignmentId = new AssignmentID();
-        assignmentId.setVehicleID(vehicle.getId());
-        assignmentId.setIncidentID(incident.getId());
+        assignmentId.setVehicleID(lockedVehicle.getId());
+        assignmentId.setIncidentID(lockedIncident.getId());
 
         Assignment assignment = new Assignment();
         assignment.setId(assignmentId);
-        assignment.setVehicle(vehicle);
-        assignment.setIncident(incident);
+        assignment.setVehicle(lockedVehicle);
+        assignment.setIncident(lockedIncident);
         assignment.setAssignedAt(LocalDateTime.now());
 
         assignmentRepository.save(assignment);
 
-        List<Point> route = routingFind.getBestRoutePoints(vehicle.getLongitude(), vehicle.getLatitude(), incident.getLongitude(), incident.getLatitude());
-        route.add(new Point(incident.getLongitude(), incident.getLatitude()));
-        for(int i=0 ; i< route.size() ; i++){
-            System.out.println(i);
-            System.out.println(route.get(i).getLongitude() + "  " + route.get(i).getLatitude());
+        logger.info("Successfully assigned vehicle {} to incident {}",
+                lockedVehicle.getId(), lockedIncident.getId());
+
+        // Trigger simulation asynchronously
+        triggerSimulationAsync(lockedVehicle, lockedIncident);
+    }
+
+    @Async("dispatchExecutor")
+    public void triggerSimulationAsync(Vehicle vehicle, Incident incident) {
+        String pythonUrl = "http://localhost:8000/simulate";
+        RestTemplate restTemplate = new RestTemplate();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("vehicleId", vehicle.getId());
+        body.put("startLat", vehicle.getLatitude());
+        body.put("startLon", vehicle.getLongitude());
+        body.put("endLat", incident.getLatitude());
+        body.put("endLon", incident.getLongitude());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        try {
+            restTemplate.postForObject(pythonUrl, request, String.class);
+            logger.info("Simulation triggered for vehicle {}", vehicle.getId());
+        } catch(Exception e){
+            logger.error("Failed to trigger simulation for vehicle {}: {}",
+                    vehicle.getId(), e.getMessage());
         }
-
-
-        CachedRoute cachedRoute = new CachedRoute(0, route);
-
-        String redisKey = "route:" + vehicle.getId();
-        redisTemplate.opsForValue().set(redisKey, cachedRoute);
     }
 
     @Transactional
     public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
-
         Assignment assignment = assignmentRepository.findActiveAssignmentByVehicle(vehicleId);
         if (assignment == null) return;
 
@@ -148,16 +184,16 @@ public class AssignmentService {
             "INCIDENT"
         );
 
+        // Check waiting Incidents asynchronously - PASS VEHICLE ID, NOT ENTITY
+        assignWaitingIncidentsByVehicleIdAsync(vehicleId);
     }
 
     private boolean hasReached(Double vehicleLatitude, Double vehicleLongitude,
                                Double incidentLatitude, Double incidentLongitude) {
-
         double distance = haversineFormula.haversine(
                 vehicleLatitude, vehicleLongitude,
                 incidentLatitude, incidentLongitude
         );
-
         return distance < 0.05; //50m
     }
 
@@ -174,13 +210,49 @@ public class AssignmentService {
         }
     }
 
+    // FIX: Accept vehicle ID instead of detached entity
+    @Async("dispatchExecutor")
+    @Transactional
+    public CompletableFuture<Void> assignWaitingIncidentsByVehicleIdAsync(Integer vehicleId){
+        logger.info("Checking waiting incidents for vehicle {}", vehicleId);
 
-    public void assignWaitingIncidents(Vehicle availableVehicle){
-        Incident waitingIncident = incidentRepository.findMostSevereReportedByType(availableVehicle.getType().toString());
-        if(waitingIncident == null){
-            return;
+        // Re-fetch vehicle in this transaction
+        Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+
+        if (vehicle == null || vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            logger.warn("Vehicle {} not available for assignment", vehicleId);
+            return CompletableFuture.completedFuture(null);
         }
-        assignVehicle(availableVehicle, waitingIncident);
+
+        Incident waitingIncident = incidentRepository.findMostSevereReportedByType(
+                vehicle.getType().toString()
+        );
+
+        if(waitingIncident == null){
+            logger.info("No waiting incidents for vehicle type {}", vehicle.getType());
+            return CompletableFuture.completedFuture(null);
+        }
+
+        try {
+            assignVehicle(vehicle, waitingIncident);
+        } catch (RuntimeException e) {
+            logger.error("Failed to assign waiting incident: {}", e.getMessage());
+        }
+
+        return CompletableFuture.completedFuture(null);
+    }
+
+    // Keep backward compatibility but deprecate
+    @Deprecated
+    @Async("dispatchExecutor")
+    @Transactional
+    public CompletableFuture<Void> assignWaitingIncidentsAsync(Vehicle availableVehicle){
+        return assignWaitingIncidentsByVehicleIdAsync(availableVehicle.getId());
+    }
+
+    // Synchronous version
+    public void assignWaitingIncidents(Integer vehicleId){
+        assignWaitingIncidentsByVehicleIdAsync(vehicleId).join();
     }
 
     public List<AssignmentDto> getAllAssignment (){
@@ -191,6 +263,4 @@ public class AssignmentService {
         }
         return assignmentDtos;
     }
-
-
 }

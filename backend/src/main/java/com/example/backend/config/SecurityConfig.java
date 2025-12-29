@@ -59,7 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
                         .requestMatchers("/api/dispatcher/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole("SYSTEM_ADMIN")
-                        .requestMatchers("/api/responder/**").hasRole("SYSTEM_ADMIN")
+                        .requestMatchers("/api/responder/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()// All other endpoints require authentication
                 )

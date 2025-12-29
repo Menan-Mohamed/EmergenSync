@@ -5,6 +5,7 @@ import com.example.backend.dtos.NotificationDto;
 import com.example.backend.dtos.VehicleDto;
 import com.example.backend.entities.Notification;
 
+import com.example.backend.entities.Incident;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -33,5 +34,7 @@ public class WebSocketPublisherService {
             "/topic/admin-notifications/" + adminId,
             dto
         );
+    public void sendIncidentUpdate(Incident update) {
+        messagingTemplate.convertAndSend("/topic/incidents", update);
     }
 }
