@@ -7,12 +7,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import com.example.backend.events.VehicleCreatedEvent;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 
 import com.example.backend.dtos.CreateVehicleDto;
 import com.example.backend.dtos.VehicleDto;
@@ -29,8 +30,6 @@ import com.example.backend.repositories.VehicleRepository;
 
 @Service
 public class VehicleService {
-
-    private static final Logger logger = LoggerFactory.getLogger(VehicleService.class);
 
     @Autowired
     private VehicleRepository vehicleRepository;
@@ -50,40 +49,80 @@ public class VehicleService {
     @Autowired
     private WebSocketPublisherService webSocketPublisherService;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     @Async("vehicleUpdateExecutor")
-    @Transactional
     public CompletableFuture<Boolean> updateVehicleLocationAsync(Integer vehicleId,
                                                                  Double latitude,
                                                                  Double longitude) {
-        logger.info("Thread {} - Updating location for vehicle {}",
-                Thread.currentThread().getName(), vehicleId);
-
-        Optional<Vehicle> findVehicle = vehicleRepository.findById(vehicleId);
-
-        if (findVehicle.isEmpty()) {
-            logger.warn("Vehicle {} not found", vehicleId);
+        try {
+            return CompletableFuture.completedFuture(
+                    updateVehicleLocationTransactional(vehicleId, latitude, longitude)
+            );
+        } catch (Exception e) {
             return CompletableFuture.completedFuture(false);
         }
-
-        Vehicle vehicle = findVehicle.get();
-
-        vehicle.setLastUpdate(LocalDateTime.now());
-        vehicle.setLatitude(latitude);
-        vehicle.setLongitude(longitude);
-        vehicleRepository.save(vehicle);
-
-        VehicleDto update = vehicleMapper.toDto(vehicle);
-        webSocketPublisherService.sendVehicleLocation(update);
-
-        assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
-
-        return CompletableFuture.completedFuture(true);
     }
 
-    // Synchronous version for backward compatibility
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 3)
+    public boolean updateVehicleLocationTransactional(Integer vehicleId,
+                                                      Double latitude,
+                                                      Double longitude) {
+        try {
+            Optional<Vehicle> findVehicle = vehicleRepository.findById(vehicleId);
+
+            if (findVehicle.isEmpty()) {
+                return false;
+            }
+
+            Vehicle vehicle = findVehicle.get();
+
+            if (vehicle.getStatus() == VehicleStatus.AVAILABLE) {
+                return false;
+            }
+
+            vehicle.setLastUpdate(LocalDateTime.now());
+            vehicle.setLatitude(latitude);
+            vehicle.setLongitude(longitude);
+
+            vehicleRepository.saveAndFlush(vehicle);
+
+            VehicleDto update = vehicleMapper.toDto(vehicle);
+            webSocketPublisherService.sendVehicleLocation(update);
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Async("vehicleUpdateExecutor")
+    public CompletableFuture<Boolean> updateVehicleLocationWithIncidentCheckAsync(Integer vehicleId,
+                                                                                  Double latitude,
+                                                                                  Double longitude) {
+        try {
+            boolean locationUpdated = updateVehicleLocationTransactional(vehicleId, latitude, longitude);
+
+            if (!locationUpdated) {
+                return CompletableFuture.completedFuture(false);
+            }
+
+            assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
+
+            return CompletableFuture.completedFuture(true);
+        } catch (Exception e) {
+            return CompletableFuture.completedFuture(false);
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public boolean updateVehicleLocation(Integer vehicleId, Double latitude, Double longitude) {
-        return updateVehicleLocationAsync(vehicleId, latitude, longitude).join();
+        boolean updated = updateVehicleLocationTransactional(vehicleId, latitude, longitude);
+        if (updated) {
+            assignmentService.checkIfVehicleReachedIncident(vehicleId, latitude, longitude);
+        }
+        return updated;
     }
 
     public Optional<VehicleDto> getVehicleById(Integer id){
@@ -129,7 +168,7 @@ public class VehicleService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @org.springframework.transaction.annotation.Transactional
     public VehicleDto createVehicle(CreateVehicleDto createVehicleDto){
         User responder = userRepository.findById(createVehicleDto.getResponderId())
                 .orElseThrow(() -> new RuntimeException("Responder not found with ID: " + createVehicleDto.getResponderId()));
@@ -155,8 +194,7 @@ public class VehicleService {
             VehicleDto update = vehicleMapper.toDto(vehicle);
             webSocketPublisherService.sendVehicleLocation(update);
 
-            // FIX: Pass vehicle ID instead of entity
-            assignmentService.assignWaitingIncidentsByVehicleIdAsync(savedVehicle.getId());
+            eventPublisher.publishEvent(new VehicleCreatedEvent(savedVehicle.getId()));
 
             return vehicleMapper.toDtoWithLocation(savedVehicle, initialLocation);
         }
@@ -165,11 +203,8 @@ public class VehicleService {
     }
 
     public List<VehicleDto> getAllVehicles (){
-        List<Vehicle> vehicles = vehicleRepository.findAll();
-        List<VehicleDto> vehicleDtos = new ArrayList<>();
-        for(Vehicle i : vehicles){
-            vehicleDtos.add(vehicleMapper.toDto(i));
-        }
-        return vehicleDtos;
+        return vehicleRepository.findAll().stream()
+                .map(vehicleMapper::toDto)
+                .collect(Collectors.toList());
     }
 }
