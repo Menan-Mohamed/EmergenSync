@@ -150,14 +150,15 @@ public class AssignmentService {
     }
 
     @Transactional(timeout = 5)
-    public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon){
+    public void checkIfVehicleReachedIncident(Integer vehicleId, Double lat, Double lon) {
+        Incident incident = null;
         try {
             Assignment assignment = assignmentRepository.findActiveAssignmentByVehicle(vehicleId);
             if (assignment == null) {
                 return;
             }
 
-            Incident incident = assignment.getIncident();
+            incident = assignment.getIncident();
 
             if (!hasReached(lat, lon, incident.getLatitude(), incident.getLongitude())) {
                 return;
@@ -187,8 +188,8 @@ public class AssignmentService {
         }
 
         notificationsService.sendSystemAlert(
-            "Incident updated: " + incident.getId(),
-            "INCIDENT"
+                "Incident updated: " + incident.getId(),
+                "INCIDENT"
         );
 
         // Check waiting Incidents asynchronously - PASS VEHICLE ID, NOT ENTITY
