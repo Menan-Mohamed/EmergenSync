@@ -185,6 +185,14 @@ public class AssignmentService {
         } catch (Exception e) {
             // Error handling - continue silently
         }
+
+        notificationsService.sendSystemAlert(
+            "Incident updated: " + incident.getId(),
+            "INCIDENT"
+        );
+
+        // Check waiting Incidents asynchronously - PASS VEHICLE ID, NOT ENTITY
+        assignWaitingIncidentsByVehicleIdAsync(vehicleId);
     }
 
     private boolean hasReached(Double vehicleLatitude, Double vehicleLongitude,

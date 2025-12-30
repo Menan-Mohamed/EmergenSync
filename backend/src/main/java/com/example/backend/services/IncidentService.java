@@ -36,12 +36,14 @@ public class IncidentService {
 
     @Transactional
     public Incident createIncident(IncidentDTO incidentdto){
-        IncidentMapper incidentMapper = new IncidentMapper();
-        Incident incident = incidentMapper.incidentDtoToincident(incidentdto);
-        incident.setStatus(REPORTED);
-        incident.setReportedAt(LocalDateTime.now());
 
-        Incident savedIncident = incidentRepository.save(incident);
+
+       IncidentMapper incidentMapper = new IncidentMapper();
+       Incident incident = incidentMapper.incidentDtoToincident(incidentdto);
+       incident.setStatus(REPORTED);
+       incident.setReportedAt(LocalDateTime.now());
+       incident.setNotificationSent(false);
+       Incident savedIncident = incidentRepository.save(incident);
 
         eventPublisher.publishEvent(new IncidentCreatedEvent(savedIncident.getId()));
 

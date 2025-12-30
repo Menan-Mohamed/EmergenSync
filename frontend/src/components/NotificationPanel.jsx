@@ -71,7 +71,6 @@ const NotificationPanel = ({ open, onClose }) => {
         <Drawer anchor="right" open={open} onClose={onClose}>
             <Box sx={{ width: 420, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
-                <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="h6">Notifications</Typography>
                         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -82,23 +81,6 @@ const NotificationPanel = ({ open, onClose }) => {
                                 <CloseIcon />
                             </IconButton>
                         </Box>
-                    </Box>
-                    
-                    {/* Connection Status */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box
-                            sx={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                bgcolor: connected ? 'success.main' : 'error.main',
-                            }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                            {connected ? 'Connected' : 'Disconnected'}
-                        </Typography>
-                    </Box>
-
                     {error && (
                         <Alert severity="error" sx={{ mt: 1 }}>
                             {error}
