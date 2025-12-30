@@ -1,19 +1,20 @@
 package com.example.backend.services;
 
-
 import com.example.backend.dtos.IncidentDTO;
 import com.example.backend.entities.Incident;
 import com.example.backend.enums.IncidentStatus;
+import com.example.backend.events.IncidentCreatedEvent;
 import com.example.backend.mapper.IncidentMapper;
 import com.example.backend.repositories.IncidentRepository;
 import static com.example.backend.enums.IncidentStatus.REPORTED;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 
 @Service
 public class IncidentService {
@@ -27,10 +28,15 @@ public class IncidentService {
     @Autowired
     private WebSocketPublisherService publisherService;
 
-   @Autowired
+    @Autowired
     private NotificationsService notificationsService;
 
-   public Incident createIncident(IncidentDTO incidentdto){
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    @Transactional
+    public Incident createIncident(IncidentDTO incidentdto){
+
 
        IncidentMapper incidentMapper = new IncidentMapper();
        Incident incident = incidentMapper.incidentDtoToincident(incidentdto);
@@ -39,16 +45,16 @@ public class IncidentService {
        incident.setNotificationSent(false);
        Incident savedIncident = incidentRepository.save(incident);
 
-       dispatchService.autoAssign(savedIncident);
-       publisherService.sendIncidentUpdate(savedIncident);
+        eventPublisher.publishEvent(new IncidentCreatedEvent(savedIncident.getId()));
 
-       notificationsService.sendSystemAlert(
-            "New incident reported: " + savedIncident.getId(),
-            "INCIDENT"
+        publisherService.sendIncidentUpdate(savedIncident);
+        notificationsService.sendSystemAlert(
+                "New incident reported: " + savedIncident.getId(),
+                "INCIDENT"
         );
 
-       return savedIncident;
-   }
+        return savedIncident;
+    }
 
     public List<Incident> getAllIncidents() {
         return incidentRepository.findAll();
@@ -60,7 +66,6 @@ public class IncidentService {
     }
 
     public Incident updateIncidentState(Integer id, String state) {
-
         Incident incident = getIncidentById(id);
 
         IncidentStatus newStatus;
@@ -76,7 +81,9 @@ public class IncidentService {
         if (newStatus != IncidentStatus.REPORTED) {
             incident.setNotificationSent(true);
         }
-        
-        return incidentRepository.save(incident);
+
+        Incident updated = incidentRepository.save(incident);
+
+        return updated;
     }
 }
