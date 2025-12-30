@@ -30,9 +30,6 @@ public class DispatchService {
     private VehicleRepository vehicleRepo;
 
     @Autowired
-    private VehicleLocationHistoryRepository vehicleLHRepo;
-
-    @Autowired
     private HaversineFormula haversineFormula;
 
     @Autowired

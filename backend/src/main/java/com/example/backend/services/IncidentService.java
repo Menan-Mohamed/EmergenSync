@@ -36,6 +36,7 @@ public class IncidentService {
        Incident incident = incidentMapper.incidentDtoToincident(incidentdto);
        incident.setStatus(REPORTED);
        incident.setReportedAt(LocalDateTime.now());
+       incident.setNotificationSent(false);
        Incident savedIncident = incidentRepository.save(incident);
 
        dispatchService.autoAssign(savedIncident);

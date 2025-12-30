@@ -179,6 +179,12 @@ public class AssignmentService {
         socketPublisherService.sendIncidentUpdate(incident);
         socketPublisherService.sendVehicleLocation(vehicleMapper.toDto(vehicle));
 
+
+        notificationsService.sendSystemAlert(
+            "Incident updated: " + incident.getId(),
+            "INCIDENT"
+        );
+
         // Check waiting Incidents asynchronously - PASS VEHICLE ID, NOT ENTITY
         assignWaitingIncidentsByVehicleIdAsync(vehicleId);
     }

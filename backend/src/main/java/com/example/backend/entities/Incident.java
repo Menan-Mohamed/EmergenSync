@@ -38,7 +38,7 @@ public class Incident {
     @Column(name="latitude", nullable = false)
     private Double latitude;
 
-    @Column(name="reportedAt", nullable = false)
+    @Column(name="reported_at", nullable = false)
     private LocalDateTime reportedAt;
 
     @Column(name="notification_sent", nullable = false)
