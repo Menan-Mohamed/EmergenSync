@@ -21,7 +21,7 @@ SPRING_URL = "http://localhost:8080/api/responder/vehicle"
 simulation_queue = Queue()
 
 # Number of worker threads
-NUM_WORKERS = 3  # adjust based on your network capability
+NUM_WORKERS = 10  # adjust based on your network capability
 
 
 def get_route(start_lat, start_lon, end_lat, end_lon):
